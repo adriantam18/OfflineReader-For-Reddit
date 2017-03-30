@@ -1,14 +1,13 @@
 package atamayo.offlinereddit.ThreadComments;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
+import java.util.List;
 
 import atamayo.offlinereddit.Data.SubredditsDataSource;
-import atamayo.offlinereddit.RedditAPI.RedditThread;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditComment;
 
 public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter {
-    ThreadCommentsContract.View mView;
-    SubredditsDataSource mRepository;
+    private ThreadCommentsContract.View mView;
+    private SubredditsDataSource mRepository;
 
     public ThreadCommentsPresenter(SubredditsDataSource dataSource, ThreadCommentsContract.View view){
         mView = view;
@@ -16,12 +15,8 @@ public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter
     }
 
     @Override
-    public void initCommentsView(String filename) {
-        mView.showCommentsFromFile(filename);
-    }
-
-    @Override
-    public void onThreadClicked(RedditThread thread){
-        mRepository.addRedditThread(thread);
+    public void initCommentsView(String threadFullName) {
+        List<RedditComment> commentList = mRepository.getCommentsForThread(threadFullName);
+        mView.showComments(commentList);
     }
 }
