@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereddit.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -8,24 +8,30 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.Generated;
 
-import java.io.Serializable;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditObject;
 
 @Entity(
         nameInDb = "REDDIT_THREADS"
 )
-public class RedditThread {
+public class RedditThread extends RedditObject {
     @Id
     Long id;
 
-    String filename;
-
     boolean wasClicked = false;
+
+    @Expose
+    @SerializedName("name")
+    @Index(unique = true)
+    String fullName;
+
+    @Expose
+    @SerializedName("id")
+    String threadId;
 
     @Expose
     String subreddit;
 
     @Expose
-    @Index(unique = true)
     String title;
 
     @Expose
@@ -44,13 +50,22 @@ public class RedditThread {
     @Expose
     int numComments;
 
-    @Generated(hash = 1062357037)
-    public RedditThread(Long id, String filename, boolean wasClicked,
-            String subreddit, String title, int score, int ups, int downs,
-            String permalink, int numComments) {
+    @Expose
+    @SerializedName("created_utc")
+    long createdUTC;
+
+    @Expose
+    boolean over18;
+
+    @Generated(hash = 710051809)
+    public RedditThread(Long id, boolean wasClicked, String fullName,
+            String threadId, String subreddit, String title, int score, int ups,
+            int downs, String permalink, int numComments, long createdUTC,
+            boolean over18) {
         this.id = id;
-        this.filename = filename;
         this.wasClicked = wasClicked;
+        this.fullName = fullName;
+        this.threadId = threadId;
         this.subreddit = subreddit;
         this.title = title;
         this.score = score;
@@ -58,6 +73,8 @@ public class RedditThread {
         this.downs = downs;
         this.permalink = permalink;
         this.numComments = numComments;
+        this.createdUTC = createdUTC;
+        this.over18 = over18;
     }
 
     @Generated(hash = 1439624015)
@@ -72,12 +89,28 @@ public class RedditThread {
         this.id = id;
     }
 
-    public String getFilename() {
-        return filename;
+    public boolean getWasClicked() {
+        return this.wasClicked;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
+    public void setWasClicked(boolean wasClicked) {
+        this.wasClicked = wasClicked;
+    }
+
+    public String getFullName() {
+        return this.fullName;
+    }
+
+    public void setFullName(String name) {
+        this.fullName = name;
+    }
+
+    public String getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(String threadId) {
+        this.threadId = threadId;
     }
 
     public String getSubreddit() {
@@ -136,11 +169,23 @@ public class RedditThread {
         this.numComments = numComments;
     }
 
-    public boolean getWasClicked() {
-        return this.wasClicked;
+    public long getCreatedUTC() {
+        return createdUTC;
     }
 
-    public void setWasClicked(boolean wasClicked) {
-        this.wasClicked = wasClicked;
+    public void setCreatedUTC(long createdUTC) {
+        this.createdUTC = createdUTC;
+    }
+
+    public boolean isOver18() {
+        return over18;
+    }
+
+    public void setOver18(boolean over18) {
+        this.over18 = over18;
+    }
+
+    public boolean getOver18() {
+        return this.over18;
     }
 }

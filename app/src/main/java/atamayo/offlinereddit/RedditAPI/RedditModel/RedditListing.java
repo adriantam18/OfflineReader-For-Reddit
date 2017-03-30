@@ -1,10 +1,10 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereddit.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 
 import java.util.List;
 
-public class RedditResponseData {
+public class RedditListing extends RedditObject {
     @Expose
     String modhash;
 
@@ -15,7 +15,7 @@ public class RedditResponseData {
     String before;
 
     @Expose
-    List<RedditChildData> children;
+    List<RedditObject> children;
 
     public String getModhash() {
         return modhash;
@@ -41,11 +41,11 @@ public class RedditResponseData {
         this.before = before;
     }
 
-    public List<RedditChildData> getChildren() {
+    public List<RedditObject> getChildren() {
         return children;
     }
 
-    public void setChildren(List<RedditChildData> children) {
+    public void setChildren(List<RedditObject> children) {
         this.children = children;
     }
 }

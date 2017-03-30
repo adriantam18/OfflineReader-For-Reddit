@@ -1,20 +1,20 @@
 package atamayo.offlinereddit.RedditAPI;
 
-import org.greenrobot.greendao.annotation.NotNull;
-
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditListing;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditResponse;
+import atamayo.offlinereddit.RedditAPI.RedditModel.Subreddit;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
-import retrofit2.http.Url;
 
 public interface RedditApiInterface {
     @GET("r/{subreddit}/about.json")
-    Call<AboutSubredditResponse> showAbout(@Path("subreddit") String subreddit);
+    Call<RedditResponse<Subreddit>> showAbout(@Path("subreddit") String subreddit);
 
-    @GET("r/{subreddit}/.json")
-    Call<RedditResponse> listThreads(@Path("subreddit") String subreddit);
+    @GET("r/{subreddit}.json")
+    Call<RedditResponse<RedditListing>> listThreads(@Path("subreddit") String subreddit);
 
-    @GET
-    Call<ResponseBody> listComments(@Url @NotNull String permalink);
+    @GET("r/{subreddit}/comments/{threadId}.json")
+    Call<ResponseBody> listCommentsJson(@Path("subreddit") String subreddit, @Path("threadId") String id);
 }

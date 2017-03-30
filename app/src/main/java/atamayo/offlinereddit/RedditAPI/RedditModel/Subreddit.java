@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereddit.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -8,12 +8,12 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.Generated;
 
-import java.io.Serializable;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditObject;
 
 @Entity(
         nameInDb = "SUBREDDITS_LIST"
 )
-public class Subreddit{
+public class Subreddit extends RedditObject {
     @Id
     Long id;
 
@@ -25,11 +25,16 @@ public class Subreddit{
     @Expose
     int susbscribers;
 
-    @Generated(hash = 1901327986)
-    public Subreddit(Long id, String displayName, int susbscribers) {
+    @Expose
+    boolean over18;
+
+    @Generated(hash = 1278174245)
+    public Subreddit(Long id, String displayName, int susbscribers,
+            boolean over18) {
         this.id = id;
         this.displayName = displayName;
         this.susbscribers = susbscribers;
+        this.over18 = over18;
     }
 
     @Generated(hash = 2105214667)
@@ -58,5 +63,13 @@ public class Subreddit{
 
     public void setSusbscribers(int susbscribers) {
         this.susbscribers = susbscribers;
+    }
+
+    public void setOver18(boolean over18) {
+        this.over18 = over18;
+    }
+
+    public boolean getOver18() {
+        return this.over18;
     }
 }
