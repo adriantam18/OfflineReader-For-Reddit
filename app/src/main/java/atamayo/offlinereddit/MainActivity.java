@@ -1,45 +1,41 @@
 package atamayo.offlinereddit;
 
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.content.Intent;
-import android.os.AsyncTask;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import atamayo.offlinereddit.Keywords.KeywordsListing;
 import atamayo.offlinereddit.SubThreads.SubThreadsListing;
 import atamayo.offlinereddit.Subreddits.SubredditsListing;
-import atamayo.offlinereddit.ThreadComments.ThreadComments;
+import atamayo.offlinereddit.ThreadComments.ThreadCommentsListing;
 
 public class MainActivity extends AppCompatActivity
     implements SubredditsListing.OnSubredditSelectedListener,
         SubThreadsListing.OnThreadSelectedListener{
     private FragmentManager fragmentManager;
-    public static final String EXTRA_SUBREDDIT = "subreddit";
-    public static final String EXTRA_THREAD = "thread";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_subreddits);
 
-        fragmentManager = getFragmentManager();
+        fragmentManager = getSupportFragmentManager();
 
-        if(savedInstanceState != null){
-            return;
+        SubredditsListing subredditsListing = (SubredditsListing) getSupportFragmentManager()
+                .findFragmentByTag(SubredditsListing.TAG);
+
+        if(subredditsListing == null) {
+            subredditsListing = new SubredditsListing();
+
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.add(R.id.fragment_container, subredditsListing, SubredditsListing.TAG)
+                    .commit();
         }
-
-        Fragment fragment = new SubredditsListing();
-
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.add(R.id.fragment_container, fragment, "SubredditsListing")
-                .commit();
     }
 
     @Override
@@ -77,12 +73,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onBackPressed(){
+        int count = getSupportFragmentManager().getBackStackEntryCount();
+        if(count > 0){
+            getSupportFragmentManager().popBackStack();
+        }
+    }
+
+    @Override
     public void launchThreadsListing(Bundle args) {
         SubThreadsListing threadsListing = new SubThreadsListing();
         threadsListing.setArguments(args);
 
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.replace(R.id.fragment_container, threadsListing, null)
+        transaction.replace(R.id.fragment_container, threadsListing, SubThreadsListing.TAG)
                 .addToBackStack(null).commit();
     }
 
@@ -95,11 +99,11 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void launchCommentsPage(Bundle args) {
-        Fragment fragment = new ThreadComments();
-        fragment.setArguments(args);
+        ThreadCommentsListing commentsListing = new ThreadCommentsListing();
+        commentsListing.setArguments(args);
 
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment, "ThreadComments")
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.fragment_container, commentsListing, ThreadCommentsListing.TAG)
                 .addToBackStack(null).commit();
     }
 }
