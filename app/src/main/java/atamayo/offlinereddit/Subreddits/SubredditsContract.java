@@ -3,28 +3,24 @@ package atamayo.offlinereddit.Subreddits;
 import java.util.List;
 
 import atamayo.offlinereddit.BaseView;
-import atamayo.offlinereddit.RedditAPI.Subreddit;
+import atamayo.offlinereddit.RedditAPI.RedditModel.Subreddit;
 
 public interface SubredditsContract {
     interface View extends BaseView<Presenter> {
-        void showInitialSubreddits(List<Subreddit> subreddits);
-        void showAddedSubreddit(int position);
-        void showRemovedSubreddits(int start, int itemCount);
+        void showSubreddits(List<Subreddit> subreddits);
+        void showAddedSubreddit(Subreddit subreddit);
+        void showSubredditThreads(String subredditName);
+        void showSubredditKeywords(String subredditName);
         void showClearedSubreddits();
-        void showSubredditThreads(String subreddit);
-        void showKeywords(String subreddit);
-        void showLoading(boolean isLoading);
         void showError(String message);
-        void startDownloadService(List<String> subreddits);
     }
 
     interface Presenter {
         void initSubredditsList();
-        void addSubreddit(String subreddit);
-        void removeSubreddit(int position);
+        void addIfExists(String subreddit);
+        void removeSubreddit(Subreddit subreddit);
         void clearSubreddits();
-        void openListOfThreads(int position);
-        void openListOfKeywords(int position);
-        void downloadThreads();
+        void openSubredditKeywords(Subreddit subreddit);
+        void openSubredditThreads(Subreddit subreddit);
     }
 }

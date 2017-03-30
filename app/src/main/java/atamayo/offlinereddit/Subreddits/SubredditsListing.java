@@ -1,6 +1,6 @@
 package atamayo.offlinereddit.Subreddits;
 
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,6 +8,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -18,7 +20,6 @@ import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squareup.leakcanary.RefWatcher;
 
@@ -26,26 +27,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 import atamayo.offlinereddit.App;
+import atamayo.offlinereddit.ConfirmDialog;
+import atamayo.offlinereddit.ConfirmDialogListener;
 import atamayo.offlinereddit.Data.SubredditsDataSource;
 import atamayo.offlinereddit.Data.SubredditsRepository;
-import atamayo.offlinereddit.MainActivity;
+import atamayo.offlinereddit.Keywords.KeywordsListing;
 import atamayo.offlinereddit.R;
-import atamayo.offlinereddit.RedditAPI.Subreddit;
+import atamayo.offlinereddit.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereddit.RedditDAO.DaoSession;
+import atamayo.offlinereddit.SubThreads.SubThreadsListing;
 import atamayo.offlinereddit.SubredditService;
+import atamayo.offlinereddit.Data.CommentFileManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
 
 public class SubredditsListing extends Fragment
-        implements SubredditsContract.View, SubListCallbacks {
+        implements SubredditsContract.View, SubListCallbacks, ConfirmDialogListener {
 
-    private final static String TAG = "SubredditsListing";
+    public static final String TAG = "SubredditsListing";
     private Unbinder unbinder;
     private SubredditsAdapter mAdapter;
     private OnSubredditSelectedListener mCallback;
     private SubredditsContract.Presenter mPresenter;
+
     @BindView(R.id.enter_item) AutoCompleteTextView mEnterItem;
     @BindView(R.id.subs_list) RecyclerView mSubsRecyclerView;
     @BindView(R.id.show_loading) ProgressBar mProgessBar;
@@ -73,7 +79,8 @@ public class SubredditsListing extends Fragment
         setHasOptionsMenu(true);
 
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
-        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao());
+        CommentFileManager commentFileManager = new CommentFileManager(getActivity());
+        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), commentFileManager);
         mPresenter = new SubredditsPresenter(repository, this);
         mAdapter = new SubredditsAdapter(new ArrayList<Subreddit>(0), this);
     }
@@ -92,6 +99,22 @@ public class SubredditsListing extends Fragment
         mSubsRecyclerView.setAdapter(mAdapter);
 
         mPresenter.initSubredditsList();
+
+        mEnterItem.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                mAdapter.getFilter().filter(s);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
 
         return view;
     }
@@ -123,10 +146,10 @@ public class SubredditsListing extends Fragment
     public boolean onOptionsItemSelected(MenuItem item){
         switch (item.getItemId()){
             case R.id.action_download:
-                mPresenter.downloadThreads();
+                startDownloadService();
                 return true;
             case R.id.action_delete:
-                //TODO: Delete subreddits
+                mPresenter.clearSubreddits();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -139,88 +162,82 @@ public class SubredditsListing extends Fragment
     }
 
     @Override
-    public void showInitialSubreddits(List<Subreddit> subreddits) {
+    public void showSubreddits(List<Subreddit> subreddits) {
         mAdapter.replaceData(subreddits);
     }
 
     @Override
-    public void showAddedSubreddit(int position) {
-        mAdapter.notifyItemInserted(position);
-        mSubsRecyclerView.smoothScrollToPosition(position);
+    public void showAddedSubreddit(Subreddit subreddit) {
+        mSubsRecyclerView.smoothScrollToPosition(mAdapter.addData(subreddit));
         mEnterItem.setText("");
     }
 
     @Override
-    public void showRemovedSubreddits(int start, int itemCount) {
-        //mAdapter.notifyItemRangeRemoved(start, itemCount);
-        mAdapter.notifyDataSetChanged();
-    }
-
-    @Override
     public void showClearedSubreddits() {
-        mAdapter.notifyDataSetChanged();
+        mAdapter.clearData();
     }
 
     @Override
-    public void showSubredditThreads(String subreddit) {
+    public void showSubredditThreads(String subredditName) {
         Bundle args = new Bundle();
-        args.putString(MainActivity.EXTRA_SUBREDDIT, subreddit);
+        args.putString(SubThreadsListing.SUBREDDIT, subredditName);
 
         mCallback.launchThreadsListing(args);
     }
 
     @Override
-    public void showKeywords(String subreddit){
+    public void showSubredditKeywords(String subredditName) {
         Bundle args = new Bundle();
-        args.putString(MainActivity.EXTRA_SUBREDDIT, subreddit);
+        args.putString(KeywordsListing.SUBREDDIT, subredditName);
 
         mCallback.launchKeywordsListing(args);
     }
 
     @Override
-    public void showLoading(boolean isLoading) {
-        if(isLoading){
-            mProgessBar.setVisibility(View.VISIBLE);
-        }else {
-            mProgessBar.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
     public void showError(String message) {
-        Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
+        showConfirmDialog("ERROR", message, "");
     }
 
     @Override
-    public void startDownloadService(List<String> subreddits){
-        Intent intent = new Intent(getActivity(), SubredditService.class);
-        intent.putExtra("subreddits", (ArrayList<String>) subreddits);
-        getActivity().startService(intent);
+    public void OnOpenListOfThreads(Subreddit subreddit) {
+        mPresenter.openSubredditThreads(subreddit);
     }
 
     @Override
-    public void OnOpenListOfThreads(int position) {
-        mPresenter.openListOfThreads(position);
+    public void OnOpenListOfKeywords(Subreddit subreddit) {
+        mPresenter.openSubredditKeywords(subreddit);
     }
 
     @Override
-    public void OnOpenListOfKeywords(int position) {
-        mPresenter.openListOfKeywords(position);
-    }
-
-    @Override
-    public void OnDeleteSubreddit(int position) {
-        mPresenter.removeSubreddit(position);
+    public void OnDeleteSubreddit(Subreddit subreddit) {
+        mPresenter.removeSubreddit(subreddit);
     }
 
     @OnClick(R.id.btn_add_subreddit)
     public void onAddButtonClicked(View view){
         String subreddit = mEnterItem.getText().toString();
         if(!subreddit.isEmpty()){
-            mPresenter.addSubreddit(subreddit);
+            mPresenter.addIfExists(subreddit);
         }else {
             mEnterItem.setError("Enter a subreddit to add");
         }
+    }
+
+    @Override
+    public void onConfirmClick(String action){
+
+    }
+
+    private void startDownloadService(){
+        Intent intent = new Intent(getActivity(), SubredditService.class);
+        intent.putExtra("subreddits", (ArrayList<String>) mAdapter.getSubsToDownload());
+        getActivity().startService(intent);
+    }
+
+    private void showConfirmDialog(String title, String message, String action){
+        ConfirmDialog dialog = ConfirmDialog.newInstance(title, message, action);
+        dialog.setTargetFragment(this, 0);
+        dialog.show(getFragmentManager(), "DIALOG");
     }
 }
 

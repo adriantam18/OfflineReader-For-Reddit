@@ -1,7 +1,9 @@
 package atamayo.offlinereddit.Subreddits;
 
+import atamayo.offlinereddit.RedditAPI.RedditModel.Subreddit;
+
 public interface SubListCallbacks {
-    void OnOpenListOfThreads(int position);
-    void OnOpenListOfKeywords(int position);
-    void OnDeleteSubreddit(int position);
+    void OnOpenListOfThreads(Subreddit subreddit);
+    void OnOpenListOfKeywords(Subreddit subreddit);
+    void OnDeleteSubreddit(Subreddit subreddit);
 }
