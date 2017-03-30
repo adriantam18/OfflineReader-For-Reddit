@@ -1,6 +1,5 @@
 package atamayo.offlinereddit.SubThreads;
 
-import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -11,7 +10,8 @@ import android.widget.TextView;
 import java.util.List;
 
 import atamayo.offlinereddit.R;
-import atamayo.offlinereddit.RedditAPI.RedditThread;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditThread;
+import butterknife.BindColor;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -31,6 +31,8 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         @BindView(R.id.thread_title) TextView titleView;
         @BindView(R.id.label_comments) TextView commentsView;
         @BindView(R.id.num_comments) TextView numCommentsView;
+        @BindColor(R.color.thread_title_color) int defaultColor;
+        @BindColor(R.color.thread_title_clicked_color) int clickedColor;
 
         public ViewHolder(View view){
             super(view);
@@ -41,13 +43,13 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
 
         @Override
         public void onClick(View v){
-            mThreadListCallbacks.OnOpenCommentsPage(getAdapterPosition());
+            mThreadListCallbacks.OnOpenCommentsPage(mThreadDataList.get(getAdapterPosition()));
         }
     }
 
     @Override
     public void onItemDismiss(int position){
-        mThreadListCallbacks.OnDeleteThread(position);
+        mThreadListCallbacks.OnDeleteThread(mThreadDataList.get(position));
     }
 
     @Override
@@ -66,9 +68,9 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         holder.numCommentsView.setText(Integer.toString(threadData.getNumComments()));
 
         if(threadData.getWasClicked()){
-            holder.titleView.setTextColor(Color.parseColor("#FF2626"));
+            holder.titleView.setTextColor(holder.clickedColor);
         }else {
-            holder.titleView.setTextColor(Color.WHITE);
+            holder.titleView.setTextColor(holder.defaultColor);
         }
     }
 
@@ -83,7 +85,8 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
     }
 
     public void replaceData(List<RedditThread> newList){
-        mThreadDataList = newList;
+        mThreadDataList.clear();
+        mThreadDataList.addAll(newList);
         notifyDataSetChanged();
     }
 }

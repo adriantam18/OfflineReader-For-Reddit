@@ -5,18 +5,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import atamayo.offlinereddit.Data.SubredditsDataSource;
-import atamayo.offlinereddit.Data.SubredditsRepository;
-import atamayo.offlinereddit.RedditAPI.RedditThread;
-import atamayo.offlinereddit.RedditAPI.Subreddit;
+import atamayo.offlinereddit.RedditAPI.RedditModel.RedditThread;
 
 public class SubThreadsPresenter implements SubThreadsContract.Presenter {
-    private List<RedditThread> mThreadsList;
     private String mSubreddit;
     private SubredditsDataSource mRepository;
     private SubThreadsContract.View mView;
 
     public SubThreadsPresenter(SubredditsDataSource repository, SubThreadsContract.View view){
-        mThreadsList = new ArrayList<>();
         mRepository = repository;
         mView = view;
     }
@@ -24,33 +20,24 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
     @Override
     public void initSubThreadsList(String subreddit) {
         mSubreddit = subreddit;
-        mThreadsList = mRepository.getRedditThreads(subreddit);
-        if(!mThreadsList.isEmpty()) {
-            mView.showInitialThreads(mThreadsList);
+        List<RedditThread> threads = mRepository.getRedditThreads(subreddit);
+        if(!threads.isEmpty()) {
+            mView.showInitialThreads(threads);
         }else {
-            mView.showErrorMessage("No threads to show.");
+            mView.showEmptyThreads();
         }
     }
 
     @Override
-    public void removeThread(List<Integer> positions) {
-
-        int itemCount = mThreadsList.size();
-        for(int pos : positions){
-            mRepository.deleteRedditThread(mThreadsList.get(pos));
-            mThreadsList.remove(pos);
-        }
-
-        mView.showRemovedThreads(positions.get(0), itemCount);
+    public void removeThread(RedditThread thread) {
+        mRepository.deleteRedditThread(thread.getFullName());
+        mView.showInitialThreads(mRepository.getRedditThreads(mSubreddit));
     }
 
     @Override
     public void removeAllThreads(){
-        if(!mSubreddit.isEmpty()) {
-            mRepository.deleteAllThreadsFromSubreddit(mSubreddit);
-            mThreadsList.clear();
-        }
-        mView.showRemovedThreads(0, 0);
+        mRepository.deleteAllThreadsFromSubreddit(mSubreddit);
+        mView.showEmptyThreads();
     }
 
     @Override
@@ -59,10 +46,9 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
     }
 
     @Override
-    public void openCommentsPage(int position) {
-        RedditThread thread = mThreadsList.get(position);
+    public void openCommentsPage(RedditThread thread) {
         thread.setWasClicked(true);
         mRepository.addRedditThread(thread);
-        mView.showCommentsPage(thread);
+        mView.showCommentsPage(thread.getFullName());
     }
 }
