@@ -26,9 +26,11 @@ import butterknife.OnClick;
 import butterknife.Unbinder;
 
 public class KeywordsListing extends AppCompatActivity implements KeywordsContract.View, KeywordsListCallback{
-
+    public static final String TAG = "KeywordsListing";
+    public static final String SUBREDDIT = "subreddit";
     private KeywordsContract.Presenter mPresenter;
     private KeywordsAdapter mAdapter;
+
     @BindView(R.id.keywords_list) RecyclerView mKeywordsRecyclerView;
     @BindView(R.id.enter_keyword) AutoCompleteTextView mUserInput;
     @BindView(R.id.toolbar) Toolbar mToolbar;
@@ -52,8 +54,8 @@ public class KeywordsListing extends AppCompatActivity implements KeywordsContra
 
         Intent intent = getIntent();
         Bundle args = intent.getExtras();
-        String subreddit = args.getString(MainActivity.EXTRA_SUBREDDIT) != null
-                ? args.getString(MainActivity.EXTRA_SUBREDDIT) : "";
+        String subreddit = args.getString(SUBREDDIT) != null
+                ? args.getString(SUBREDDIT) : "";
 
 
         mAdapter = new KeywordsAdapter(new ArrayList<String>(), this);
