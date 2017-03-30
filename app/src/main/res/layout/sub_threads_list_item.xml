@@ -5,60 +5,55 @@
     android:id="@+id/thread_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    card_view:cardBackgroundColor="#4A4A4A"
-    card_view:cardCornerRadius="4dp"
-    android:layout_margin="10dp">
+    android:layout_marginTop="@dimen/card_margin_top"
+    android:layout_marginStart="@dimen/card_margin_start"
+    android:layout_marginEnd="@dimen/card_margin_end"
+    card_view:cardBackgroundColor="@color/thread_card_background"
+    card_view:cardCornerRadius="4dp">
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="10dp">
+        android:paddingTop="@dimen/thread_card_padding_top"
+        android:paddingBottom="@dimen/thread_card_padding_bottom"
+        android:paddingStart="@dimen/thread_card_padding_start"
+        android:paddingEnd="@dimen/thread_card_padding_end">
             <TextView
                 android:id="@+id/score"
-                android:textSize="20sp"
-                android:textColor="#ffffff"
-                android:layout_marginTop="15dp"
-                android:layout_marginStart="15dp"
-                android:layout_marginEnd="15dp"
-                android:layout_marginBottom="15dp"
+                android:textSize="@dimen/thread_score_text_size"
+                android:textColor="@color/thread_score_color"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"/>
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="@dimen/thread_score_margin_end"/>
+
             <TextView
                 android:id="@+id/thread_title"
-                android:textSize="18sp"
-                android:textColor="#ffffff"
-                android:layout_marginStart="10dp"
-                android:layout_marginTop="5dp"
-                android:layout_marginBottom="5dp"
+                android:textSize="@dimen/thread_title_text_size"
+                android:textColor="@color/thread_title_color"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toEndOf="@id/score"
-                android:layout_alignParentTop="true" />
+                android:layout_alignParentTop="true"
+                android:layout_marginBottom="@dimen/thread_title_margin_bottom"/>
 
             <TextView
                 android:id="@+id/label_comments"
-                android:textSize="14sp"
-                android:textColor="#ffffff"
-                android:layout_marginStart="10dp"
-                android:layout_marginBottom="5dp"
-                android:text="Comments:"
+                android:textSize="@dimen/thread_labels_text_size"
+                android:textColor="@color/label_comments_color"
+                android:text="Comments: "
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignStart="@id/thread_title"
-                android:layout_toEndOf="@id/score"
                 android:layout_below="@id/thread_title"/>
 
             <TextView
                 android:id="@+id/num_comments"
-                android:textSize="14sp"
-                android:textColor="#ffffff"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="15dp"
-                android:layout_marginBottom="5dp"
+                android:textSize="@dimen/thread_labels_text_size"
+                android:textColor="@color/label_comments_color"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/thread_title"
+                android:layout_alignBaseline="@id/label_comments"
                 android:layout_toEndOf="@id/label_comments"/>
     </RelativeLayout>
 </android.support.v7.widget.CardView>
