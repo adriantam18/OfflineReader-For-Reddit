@@ -70,7 +70,7 @@ public class SubredditsRepository implements SubredditsDataSource {
     }
 
     @Override
-    public List<RedditComment> getCommentsForThread(String threadFullName){
+    public List<RedditComment> getCommentsForThread(String threadFullName, int limit, int offset){
         List<RedditComment> comments = new ArrayList<>();
         Gson gson = new GsonBuilder()
                 .excludeFieldsWithoutExposeAnnotation()
@@ -84,11 +84,18 @@ public class SubredditsRepository implements SubredditsDataSource {
             RedditListing listings = (RedditListing) objects[1];
             List<RedditObject> commentListings = listings.getChildren();
 
-            for (RedditObject commentListing : commentListings) {
-                if (commentListing instanceof RedditComment) {
-                    RedditComment comment = (RedditComment) commentListing;
-                    comments.add(comment);
-                    getReplies(comments, comment);
+            int last = limit + offset;
+            for(int i = offset; i < last; i++){
+                try {
+                    RedditObject commentListing = commentListings.get(i);
+                    if (commentListing instanceof RedditComment) {
+                        RedditComment comment = (RedditComment) commentListing;
+                        comments.add(comment);
+                        getReplies(comments, comment);
+                    }
+                }catch (IndexOutOfBoundsException e){
+                    Log.e("Repo", e.toString());
+                    return comments;
                 }
             }
         }

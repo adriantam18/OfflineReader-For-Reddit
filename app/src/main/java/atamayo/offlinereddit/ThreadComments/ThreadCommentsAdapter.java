@@ -1,9 +1,15 @@
 package atamayo.offlinereddit.ThreadComments;
 
+import android.content.res.Resources;
+import android.provider.Settings;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.List;
@@ -14,21 +20,26 @@ import butterknife.BindArray;
 import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
+import butterknife.Optional;
 
 public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsAdapter.ViewHolder> {
     private List<RedditComment> mCommentsList;
+    private LoadCommentsCallback mCallback;
 
-    public ThreadCommentsAdapter(List<RedditComment> comments){
+    public ThreadCommentsAdapter(List<RedditComment> comments, LoadCommentsCallback callback){
         mCommentsList = comments;
+        mCallback = callback;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
-        @BindView(R.id.depth_marker) View depthMarker;
-        @BindView(R.id.author_text_view) TextView authorView;
-        @BindView(R.id.score_amount_view) TextView scoreView;
-        @BindView(R.id.time_passed_view) TextView timeView;
-        @BindView(R.id.comment_body_view) TextView commentBodyView;
-        @BindView(R.id.divider) View divider;
+        @Nullable @BindView(R.id.depth_marker) View depthMarker;
+        @Nullable @BindView(R.id.author_text_view) TextView authorView;
+        @Nullable @BindView(R.id.score_amount_view) TextView scoreView;
+        @Nullable @BindView(R.id.time_passed_view) TextView timeView;
+        @Nullable @BindView(R.id.comment_body_view) TextView commentBodyView;
+        @Nullable @BindView(R.id.divider) View divider;
+        @Nullable @BindView(R.id.btn_load_more) Button btnLoadMore;
         @BindDimen(R.dimen.depth_marker_width) float depthMarkerWidth;
         @BindArray(R.array.depth_colors) int[] colors;
 
@@ -37,43 +48,91 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
 
             ButterKnife.bind(this, view);
         }
+
+        @Optional
+        @OnClick(R.id.btn_load_more)
+        public void onLoadMoreClicked(){
+            mCallback.loadMore();
+        }
     }
 
     @Override
     public ThreadCommentsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.comments_list_item, null);
+        View itemView;
+
+        if(viewType == R.layout.comments_list_item){
+            itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.comments_list_item, parent, false);
+        }else{
+            itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.comments_footer, parent, false);
+        }
+
         return new ThreadCommentsAdapter.ViewHolder(itemView);
     }
 
     @Override
     public void onBindViewHolder(ThreadCommentsAdapter.ViewHolder holder, int position) {
-        RedditComment comment = mCommentsList.get(position);
-        String points = Integer.toString(comment.getScore()) + " points";
-        String time = getTimeString(comment.getCreatedUTC());
+        if(position < mCommentsList.size()) {
+            RedditComment comment = mCommentsList.get(position);
+            String points = Integer.toString(comment.getScore()) + " points";
+            String time = getTimeString(comment.getCreatedUTC());
 
-        if(comment.getDepth() > 0){
-            holder.depthMarker.setVisibility(View.VISIBLE);
-            int paddingStart = Math.round(holder.depthMarkerWidth) * (comment.getDepth() - 1);
-            holder.itemView.setPadding(paddingStart, 0, 0, 0);
+            holder.authorView.setText(comment.getAuthor());
+            holder.scoreView.setText(points);
+            holder.timeView.setText(time);
+            holder.commentBodyView.setText(comment.getBody());
+
+            if (position == getItemCount()) {
+                holder.divider.setVisibility(View.GONE);
+            } else {
+                holder.divider.setVisibility(View.VISIBLE);
+            }
+
+            if (comment.getDepth() > 0) {
+                holder.depthMarker.setVisibility(View.VISIBLE);
+                int paddingStart = Math.round(holder.depthMarkerWidth) * (comment.getDepth() - 1);
+                holder.itemView.setPadding(paddingStart, 0, 0, 0);
+            } else {
+                holder.itemView.setPadding(0, 0, 0, 0);
+                holder.depthMarker.setVisibility(View.GONE);
+            }
+
+            int colorIndex = comment.getDepth() % holder.colors.length;
+            int depthMarkerColor = holder.colors[colorIndex];
+            holder.depthMarker.setBackgroundColor(depthMarkerColor);
         }else{
-            holder.depthMarker.setVisibility(View.GONE);
+            holder.btnLoadMore.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mCallback.loadMore();
+                }
+            });
         }
+    }
 
-        int colorIndex = comment.getDepth() % holder.colors.length;
-        int depthMarkerColor = holder.colors[colorIndex];
+    @Override
+    public int getItemCount() {
+        return mCommentsList.size() + 1;
+    }
 
-        holder.depthMarker.setBackgroundColor(depthMarkerColor);
-        holder.authorView.setText(comment.getAuthor());
-        holder.scoreView.setText(points);
-        holder.timeView.setText(time);
-        holder.commentBodyView.setText(comment.getBody());
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView){
+        super.onAttachedToRecyclerView(recyclerView);
+    }
 
-        if(position == getItemCount()){
-            holder.divider.setVisibility(View.GONE);
-        }else{
-            holder.divider.setVisibility(View.VISIBLE);
-        }
+    @Override
+    public int getItemViewType(int position){
+        return position == mCommentsList.size() ? R.layout.comments_footer : R.layout.comments_list_item;
+    }
+
+    public void replaceData(List<RedditComment> newList){
+        mCommentsList.clear();
+        mCommentsList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
+    public void addData(List<RedditComment> moreComments){
+        mCommentsList.addAll(moreComments);
+        notifyDataSetChanged();
     }
 
     private String getTimeString(long commentPostTime){
@@ -110,21 +169,5 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
 
         long years = months / 12;
         return Long.toString(years) + " year(s) ago";
-    }
-
-    @Override
-    public int getItemCount() {
-        return mCommentsList.size();
-    }
-
-    @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView){
-        super.onAttachedToRecyclerView(recyclerView);
-    }
-
-    public void replaceData(List<RedditComment> newList){
-        mCommentsList.clear();
-        mCommentsList.addAll(newList);
-        notifyDataSetChanged();
     }
 }

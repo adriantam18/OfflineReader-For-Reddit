@@ -12,7 +12,7 @@ public interface SubredditsDataSource {
 
     List<Subreddit> getSubreddits();
     List<RedditThread> getRedditThreads(String subredditName);
-    List<RedditComment> getCommentsForThread(String threadFullName);
+    List<RedditComment> getCommentsForThread(String threadFullName, int limit, int offset);
 
     void deleteAllSubreddits();
     void deleteSubreddit(String subredditName);

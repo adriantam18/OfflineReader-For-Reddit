@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +21,13 @@ import atamayo.offlinereddit.RedditDAO.DaoSession;
 import atamayo.offlinereddit.Data.CommentFileManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnCheckedChanged;
+import butterknife.OnClick;
+import butterknife.Optional;
 import butterknife.Unbinder;
 
-public class ThreadCommentsListing extends Fragment implements ThreadCommentsContract.View {
+public class ThreadCommentsListing extends Fragment
+        implements ThreadCommentsContract.View, LoadCommentsCallback {
     public static final String TAG = "ThreadCommentsListing";
     public static final String THREAD_FULL_NAME = "ThreadFullName";
 
@@ -39,7 +44,7 @@ public class ThreadCommentsListing extends Fragment implements ThreadCommentsCon
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), fileManager);
         mPresenter = new ThreadCommentsPresenter(repository, this);
-        mAdapter = new ThreadCommentsAdapter(new ArrayList<RedditComment>(0));
+        mAdapter = new ThreadCommentsAdapter(new ArrayList<RedditComment>(0), this);
     }
 
     @Override
@@ -53,6 +58,7 @@ public class ThreadCommentsListing extends Fragment implements ThreadCommentsCon
 
         mCommentsList.setLayoutManager(new LinearLayoutManager(getActivity()));
         mCommentsList.setAdapter(mAdapter);
+
         mPresenter.initCommentsView(threadFullName);
 
         return view;
@@ -75,7 +81,17 @@ public class ThreadCommentsListing extends Fragment implements ThreadCommentsCon
     }
 
     @Override
+    public void showMoreComments(List<RedditComment> comments){
+        mAdapter.addData(comments);
+    }
+
+    @Override
     public void setPresenter(ThreadCommentsContract.Presenter presenter) {
         mPresenter = presenter;
+    }
+
+    @Override
+    public void loadMore(){
+        mPresenter.getMoreComments();
     }
 }
