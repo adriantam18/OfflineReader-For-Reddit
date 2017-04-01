@@ -1,15 +1,11 @@
 package atamayo.offlinereddit.ThreadComments;
 
-import android.content.res.Resources;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.List;
@@ -26,6 +22,8 @@ import butterknife.Optional;
 public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsAdapter.ViewHolder> {
     private List<RedditComment> mCommentsList;
     private LoadCommentsCallback mCallback;
+    private static final int VIEW_FOOTER = R.layout.comments_footer;
+    private static final int VIEW_ITEM = R.layout.comments_list_item;
 
     public ThreadCommentsAdapter(List<RedditComment> comments, LoadCommentsCallback callback){
         mCommentsList = comments;
@@ -34,9 +32,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
 
     public class ViewHolder extends RecyclerView.ViewHolder{
         @Nullable @BindView(R.id.depth_marker) View depthMarker;
-        @Nullable @BindView(R.id.author_text_view) TextView authorView;
-        @Nullable @BindView(R.id.score_amount_view) TextView scoreView;
-        @Nullable @BindView(R.id.time_passed_view) TextView timeView;
+        @Nullable @BindView(R.id.info_text_view) TextView infoView;
         @Nullable @BindView(R.id.comment_body_view) TextView commentBodyView;
         @Nullable @BindView(R.id.divider) View divider;
         @Nullable @BindView(R.id.btn_load_more) Button btnLoadMore;
@@ -60,10 +56,10 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
     public ThreadCommentsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView;
 
-        if(viewType == R.layout.comments_list_item){
-            itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.comments_list_item, parent, false);
+        if(viewType == VIEW_ITEM){
+            itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_ITEM, parent, false);
         }else{
-            itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.comments_footer, parent, false);
+            itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_FOOTER, parent, false);
         }
 
         return new ThreadCommentsAdapter.ViewHolder(itemView);
@@ -75,10 +71,9 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
             RedditComment comment = mCommentsList.get(position);
             String points = Integer.toString(comment.getScore()) + " points";
             String time = getTimeString(comment.getCreatedUTC());
+            String info = comment.getAuthor() + " " + points + " " + time;
 
-            holder.authorView.setText(comment.getAuthor());
-            holder.scoreView.setText(points);
-            holder.timeView.setText(time);
+            holder.infoView.setText(info);
             holder.commentBodyView.setText(comment.getBody());
 
             if (position == getItemCount()) {
@@ -121,7 +116,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<ThreadCommentsA
 
     @Override
     public int getItemViewType(int position){
-        return position == mCommentsList.size() ? R.layout.comments_footer : R.layout.comments_list_item;
+        return position == mCommentsList.size() ? VIEW_FOOTER : VIEW_ITEM;
     }
 
     public void replaceData(List<RedditComment> newList){

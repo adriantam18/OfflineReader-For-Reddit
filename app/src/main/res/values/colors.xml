@@ -25,7 +25,6 @@
     <color name="comments_time_color">#0288D1</color>
     <color name="comments_body_color">#FFFFFF</color>
 
-    <color name="depth_0">@color/screen_background_color</color>
     <color name="depth_1">#4A148C</color>
     <color name="depth_2">#6A1B9A</color>
     <color name="depth_3">#7B1FA2</color>
@@ -33,7 +32,6 @@
     <color name="depth_5">#9C27B0</color>
     
     <array name="depth_colors">
-        <item>@color/depth_0</item>
         <item>@color/depth_1</item>
         <item>@color/depth_2</item>
         <item>@color/depth_3</item>
