@@ -36,6 +36,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.6.2'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.6.0'
     compile 'org.greenrobot:eventbus:3.0.0'
 
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
@@ -45,6 +46,6 @@ dependencies {
 
 greendao{
     schemaVersion 1
-    daoPackage 'atamayo.offlinereddit.RedditDAO'
+    daoPackage 'atamayo.offlinereader.RedditDAO'
     targetGenDir 'src/main/java'
 }

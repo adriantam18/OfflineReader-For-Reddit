@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="atamayo.offlinereddit.MainActivity">
+    tools:context="atamayo.offlinereader.MainActivity">
 
     <FrameLayout
         android:id="@+id/fragment_container"
