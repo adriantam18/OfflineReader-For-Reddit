@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereader.RedditAPI;
 
 import android.util.Log;
 
@@ -10,7 +10,7 @@ import com.google.gson.JsonParseException;
 
 import java.lang.reflect.Type;
 
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditObject;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
 
 /**
  * Credits: https://github.com/jacobtabak/droidcon

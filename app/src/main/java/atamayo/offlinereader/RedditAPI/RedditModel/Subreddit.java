@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI.RedditModel;
+package atamayo.offlinereader.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -7,8 +7,6 @@ import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.Generated;
-
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditObject;
 
 @Entity(
         nameInDb = "SUBREDDITS_LIST"

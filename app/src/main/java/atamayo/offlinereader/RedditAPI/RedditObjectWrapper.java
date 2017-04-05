@@ -1,8 +1,8 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereader.RedditAPI;
 
 import com.google.gson.JsonElement;
 
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditType;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditType;
 
 /**
  * Credits: https://github.com/jacobtabak/droidcon

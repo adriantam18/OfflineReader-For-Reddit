@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI.RedditModel;
+package atamayo.offlinereader.RedditAPI.RedditModel;
 
 public enum RedditType {
     Listing(RedditListing.class),

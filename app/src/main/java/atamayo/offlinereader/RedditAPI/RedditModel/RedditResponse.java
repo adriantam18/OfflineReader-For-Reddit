@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI.RedditModel;
+package atamayo.offlinereader.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 

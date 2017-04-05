@@ -1,14 +1,16 @@
-package atamayo.offlinereddit.RedditAPI;
+package atamayo.offlinereader.RedditAPI;
 
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditListing;
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditResponse;
-import atamayo.offlinereddit.RedditAPI.RedditModel.Subreddit;
+import java.util.List;
+
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditResponse;
+import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
 
-public interface RedditApiInterface {
+public interface RedditOAuthInterface {
     @GET("r/{subreddit}/about.json")
     Call<RedditResponse<Subreddit>> showAbout(@Path("subreddit") String subreddit);
 

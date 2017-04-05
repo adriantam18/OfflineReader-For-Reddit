@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.RedditAPI.RedditModel;
+package atamayo.offlinereader.RedditAPI.RedditModel;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -7,8 +7,6 @@ import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.Generated;
-
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditObject;
 
 @Entity(
         nameInDb = "REDDIT_THREADS"
@@ -35,6 +33,9 @@ public class RedditThread extends RedditObject {
     String title;
 
     @Expose
+    String author;
+
+    @Expose
     int score;
 
     @Expose
@@ -44,10 +45,13 @@ public class RedditThread extends RedditObject {
     int downs;
 
     @Expose
+    String selftext;
+
+    @Expose
     String permalink;
 
-    @SerializedName("num_comments")
     @Expose
+    @SerializedName("num_comments")
     int numComments;
 
     @Expose
@@ -57,20 +61,22 @@ public class RedditThread extends RedditObject {
     @Expose
     boolean over18;
 
-    @Generated(hash = 710051809)
+    @Generated(hash = 134842030)
     public RedditThread(Long id, boolean wasClicked, String fullName,
-            String threadId, String subreddit, String title, int score, int ups,
-            int downs, String permalink, int numComments, long createdUTC,
-            boolean over18) {
+            String threadId, String subreddit, String title, String author,
+            int score, int ups, int downs, String selftext, String permalink,
+            int numComments, long createdUTC, boolean over18) {
         this.id = id;
         this.wasClicked = wasClicked;
         this.fullName = fullName;
         this.threadId = threadId;
         this.subreddit = subreddit;
         this.title = title;
+        this.author = author;
         this.score = score;
         this.ups = ups;
         this.downs = downs;
+        this.selftext = selftext;
         this.permalink = permalink;
         this.numComments = numComments;
         this.createdUTC = createdUTC;
@@ -121,6 +127,22 @@ public class RedditThread extends RedditObject {
         this.subreddit = subreddit;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
     public int getScore() {
         return score;
     }
@@ -145,20 +167,20 @@ public class RedditThread extends RedditObject {
         this.downs = downs;
     }
 
+    public String getSelftext() {
+        return selftext;
+    }
+
+    public void setSelftext(String selftext) {
+        this.selftext = selftext;
+    }
+
     public String getPermalink() {
         return permalink;
     }
 
     public void setPermalink(String permalink) {
         this.permalink = permalink;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public int getNumComments() {
