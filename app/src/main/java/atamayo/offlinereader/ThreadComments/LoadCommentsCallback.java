@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.ThreadComments;
+package atamayo.offlinereader.ThreadComments;
 
 /**
  * Created by apdt_18 on 3/31/2017.

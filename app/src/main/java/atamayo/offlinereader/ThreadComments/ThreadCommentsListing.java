@@ -1,4 +1,4 @@
-package atamayo.offlinereddit.ThreadComments;
+package atamayo.offlinereader.ThreadComments;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -7,23 +7,21 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import atamayo.offlinereddit.App;
-import atamayo.offlinereddit.Data.SubredditsDataSource;
-import atamayo.offlinereddit.Data.SubredditsRepository;
-import atamayo.offlinereddit.R;
-import atamayo.offlinereddit.RedditAPI.RedditModel.RedditComment;
-import atamayo.offlinereddit.RedditDAO.DaoSession;
-import atamayo.offlinereddit.Data.CommentFileManager;
+import atamayo.offlinereader.App;
+import atamayo.offlinereader.Data.SubredditsDataSource;
+import atamayo.offlinereader.Data.SubredditsRepository;
+import atamayo.offlinereader.R;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
+import atamayo.offlinereader.RedditDAO.DaoSession;
+import atamayo.offlinereader.Data.CommentFileManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnCheckedChanged;
-import butterknife.OnClick;
-import butterknife.Optional;
 import butterknife.Unbinder;
 
 public class ThreadCommentsListing extends Fragment
@@ -31,6 +29,7 @@ public class ThreadCommentsListing extends Fragment
     public static final String TAG = "ThreadCommentsListing";
     public static final String THREAD_FULL_NAME = "ThreadFullName";
 
+    @BindView(R.id.self_text) TextView mSelfText;
     @BindView(R.id.comments_list) RecyclerView mCommentsList;
     ThreadCommentsAdapter mAdapter;
     ThreadCommentsContract.Presenter mPresenter;
@@ -73,6 +72,12 @@ public class ThreadCommentsListing extends Fragment
     @Override
     public void onPause(){
         super.onPause();
+    }
+
+    @Override
+    public void showSelfText(RedditThread thread){
+        //mSelfText.setText(selfText);
+        mAdapter.addThread(thread);
     }
 
     @Override
