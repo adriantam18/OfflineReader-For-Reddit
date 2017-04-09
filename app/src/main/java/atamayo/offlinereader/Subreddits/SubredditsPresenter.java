@@ -38,7 +38,7 @@ public class SubredditsPresenter implements SubredditsContract.Presenter{
 
                     @Override
                     public void onError(String message) {
-
+                        mView.showError(message);
                     }
                 });
     }
