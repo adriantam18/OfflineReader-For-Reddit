@@ -72,14 +72,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onBackPressed(){
-        int count = getSupportFragmentManager().getBackStackEntryCount();
-        if(count > 0){
-            getSupportFragmentManager().popBackStack();
-        }
-    }
-
-    @Override
     public void launchThreadsListing(Bundle args) {
         SubThreadsListing threadsListing = new SubThreadsListing();
         threadsListing.setArguments(args);
