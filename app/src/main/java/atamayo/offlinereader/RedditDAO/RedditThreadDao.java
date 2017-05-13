@@ -35,10 +35,11 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         public final static Property Ups = new Property(8, int.class, "ups", false, "UPS");
         public final static Property Downs = new Property(9, int.class, "downs", false, "DOWNS");
         public final static Property Selftext = new Property(10, String.class, "selftext", false, "SELFTEXT");
-        public final static Property Permalink = new Property(11, String.class, "permalink", false, "PERMALINK");
-        public final static Property NumComments = new Property(12, int.class, "numComments", false, "NUM_COMMENTS");
-        public final static Property CreatedUTC = new Property(13, long.class, "createdUTC", false, "CREATED_UTC");
-        public final static Property Over18 = new Property(14, boolean.class, "over18", false, "OVER18");
+        public final static Property SelftextHtml = new Property(11, String.class, "selftextHtml", false, "SELFTEXT_HTML");
+        public final static Property Permalink = new Property(12, String.class, "permalink", false, "PERMALINK");
+        public final static Property NumComments = new Property(13, int.class, "numComments", false, "NUM_COMMENTS");
+        public final static Property CreatedUTC = new Property(14, long.class, "createdUTC", false, "CREATED_UTC");
+        public final static Property Over18 = new Property(15, boolean.class, "over18", false, "OVER18");
     }
 
 
@@ -65,10 +66,11 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
                 "\"UPS\" INTEGER NOT NULL ," + // 8: ups
                 "\"DOWNS\" INTEGER NOT NULL ," + // 9: downs
                 "\"SELFTEXT\" TEXT," + // 10: selftext
-                "\"PERMALINK\" TEXT," + // 11: permalink
-                "\"NUM_COMMENTS\" INTEGER NOT NULL ," + // 12: numComments
-                "\"CREATED_UTC\" INTEGER NOT NULL ," + // 13: createdUTC
-                "\"OVER18\" INTEGER NOT NULL );"); // 14: over18
+                "\"SELFTEXT_HTML\" TEXT," + // 11: selftextHtml
+                "\"PERMALINK\" TEXT," + // 12: permalink
+                "\"NUM_COMMENTS\" INTEGER NOT NULL ," + // 13: numComments
+                "\"CREATED_UTC\" INTEGER NOT NULL ," + // 14: createdUTC
+                "\"OVER18\" INTEGER NOT NULL );"); // 15: over18
         // Add Indexes
         db.execSQL("CREATE UNIQUE INDEX " + constraint + "IDX_REDDIT_THREADS_FULL_NAME ON REDDIT_THREADS" +
                 " (\"FULL_NAME\" ASC);");
@@ -123,13 +125,18 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
             stmt.bindString(11, selftext);
         }
  
+        String selftextHtml = entity.getSelftextHtml();
+        if (selftextHtml != null) {
+            stmt.bindString(12, selftextHtml);
+        }
+ 
         String permalink = entity.getPermalink();
         if (permalink != null) {
-            stmt.bindString(12, permalink);
+            stmt.bindString(13, permalink);
         }
-        stmt.bindLong(13, entity.getNumComments());
-        stmt.bindLong(14, entity.getCreatedUTC());
-        stmt.bindLong(15, entity.getOver18() ? 1L: 0L);
+        stmt.bindLong(14, entity.getNumComments());
+        stmt.bindLong(15, entity.getCreatedUTC());
+        stmt.bindLong(16, entity.getOver18() ? 1L: 0L);
     }
 
     @Override
@@ -175,13 +182,18 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
             stmt.bindString(11, selftext);
         }
  
+        String selftextHtml = entity.getSelftextHtml();
+        if (selftextHtml != null) {
+            stmt.bindString(12, selftextHtml);
+        }
+ 
         String permalink = entity.getPermalink();
         if (permalink != null) {
-            stmt.bindString(12, permalink);
+            stmt.bindString(13, permalink);
         }
-        stmt.bindLong(13, entity.getNumComments());
-        stmt.bindLong(14, entity.getCreatedUTC());
-        stmt.bindLong(15, entity.getOver18() ? 1L: 0L);
+        stmt.bindLong(14, entity.getNumComments());
+        stmt.bindLong(15, entity.getCreatedUTC());
+        stmt.bindLong(16, entity.getOver18() ? 1L: 0L);
     }
 
     @Override
@@ -203,10 +215,11 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
             cursor.getInt(offset + 8), // ups
             cursor.getInt(offset + 9), // downs
             cursor.isNull(offset + 10) ? null : cursor.getString(offset + 10), // selftext
-            cursor.isNull(offset + 11) ? null : cursor.getString(offset + 11), // permalink
-            cursor.getInt(offset + 12), // numComments
-            cursor.getLong(offset + 13), // createdUTC
-            cursor.getShort(offset + 14) != 0 // over18
+            cursor.isNull(offset + 11) ? null : cursor.getString(offset + 11), // selftextHtml
+            cursor.isNull(offset + 12) ? null : cursor.getString(offset + 12), // permalink
+            cursor.getInt(offset + 13), // numComments
+            cursor.getLong(offset + 14), // createdUTC
+            cursor.getShort(offset + 15) != 0 // over18
         );
         return entity;
     }
@@ -224,10 +237,11 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         entity.setUps(cursor.getInt(offset + 8));
         entity.setDowns(cursor.getInt(offset + 9));
         entity.setSelftext(cursor.isNull(offset + 10) ? null : cursor.getString(offset + 10));
-        entity.setPermalink(cursor.isNull(offset + 11) ? null : cursor.getString(offset + 11));
-        entity.setNumComments(cursor.getInt(offset + 12));
-        entity.setCreatedUTC(cursor.getLong(offset + 13));
-        entity.setOver18(cursor.getShort(offset + 14) != 0);
+        entity.setSelftextHtml(cursor.isNull(offset + 11) ? null : cursor.getString(offset + 11));
+        entity.setPermalink(cursor.isNull(offset + 12) ? null : cursor.getString(offset + 12));
+        entity.setNumComments(cursor.getInt(offset + 13));
+        entity.setCreatedUTC(cursor.getLong(offset + 14));
+        entity.setOver18(cursor.getShort(offset + 15) != 0);
      }
     
     @Override

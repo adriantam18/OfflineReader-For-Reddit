@@ -48,6 +48,10 @@ public class RedditThread extends RedditObject {
     String selftext;
 
     @Expose
+    @SerializedName("selftext_html")
+    String selftextHtml;
+
+    @Expose
     String permalink;
 
     @Expose
@@ -61,11 +65,11 @@ public class RedditThread extends RedditObject {
     @Expose
     boolean over18;
 
-    @Generated(hash = 134842030)
+    @Generated(hash = 154724876)
     public RedditThread(Long id, boolean wasClicked, String fullName,
             String threadId, String subreddit, String title, String author,
-            int score, int ups, int downs, String selftext, String permalink,
-            int numComments, long createdUTC, boolean over18) {
+            int score, int ups, int downs, String selftext, String selftextHtml,
+            String permalink, int numComments, long createdUTC, boolean over18) {
         this.id = id;
         this.wasClicked = wasClicked;
         this.fullName = fullName;
@@ -77,6 +81,7 @@ public class RedditThread extends RedditObject {
         this.ups = ups;
         this.downs = downs;
         this.selftext = selftext;
+        this.selftextHtml = selftextHtml;
         this.permalink = permalink;
         this.numComments = numComments;
         this.createdUTC = createdUTC;
@@ -175,6 +180,14 @@ public class RedditThread extends RedditObject {
         this.selftext = selftext;
     }
 
+    public String getSelftextHtml() {
+        return selftextHtml;
+    }
+
+    public void setSelftextHtml(String selftextHtml) {
+        this.selftextHtml = selftextHtml;
+    }
+
     public String getPermalink() {
         return permalink;
     }
@@ -189,6 +202,41 @@ public class RedditThread extends RedditObject {
 
     public void setNumComments(int numComments) {
         this.numComments = numComments;
+    }
+
+    public String getFormattedTime(){
+        long seconds = (System.currentTimeMillis() - (this.getCreatedUTC() * 1000)) / 1000;
+        if(seconds < 60){
+            return Long.toString(seconds) + " second(s) ago";
+        }
+
+        long minutes = seconds / 60;
+        if(minutes < 60){
+            return Long.toString(minutes) + " minute(s) ago";
+        }
+
+        long hours = minutes / 60;
+        if(hours < 24){
+            return Long.toString(hours) + " hour(s) ago";
+        }
+
+        long days = hours / 24;
+        if(days < 7){
+            return Long.toString(days) + " day(s) ago";
+        }
+
+        long weeks = days / 7;
+        if(weeks < 4){
+            return Long.toString(weeks) + " week(s) ago";
+        }
+
+        long months = weeks / 4;
+        if(months < 12){
+            return Long.toString(months) + " month(s) ago";
+        }
+
+        long years = months / 12;
+        return Long.toString(years) + " year(s) ago";
     }
 
     public long getCreatedUTC() {
