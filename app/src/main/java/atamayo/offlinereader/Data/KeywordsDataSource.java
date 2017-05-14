@@ -1,9 +1,10 @@
 package atamayo.offlinereader.Data;
 
 import java.util.List;
+import java.util.Set;
 
 public interface KeywordsDataSource {
-    List<String> getKeywords(String subreddit);
+    Set<String> getKeywords(String subreddit);
     void updateKeywords(String subreddit, List<String> keywords);
     void clearKeywords(String subreddit);
 }

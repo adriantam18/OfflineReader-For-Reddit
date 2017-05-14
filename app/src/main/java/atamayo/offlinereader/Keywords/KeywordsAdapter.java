@@ -35,13 +35,13 @@ public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHo
 
         @OnClick(R.id.btn_remove_keyword)
         public void removeKeyword(View view){
-            mCallback.OnDeleteKeyword(getAdapterPosition());
+            mCallback.OnDeleteKeyword(mKeywords.get(getAdapterPosition()));
         }
     }
 
     public KeywordsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.keywords_list_item, null);
+                .inflate(R.layout.keywords_list_item, parent, false);
         return new ViewHolder(itemView);
     }
 

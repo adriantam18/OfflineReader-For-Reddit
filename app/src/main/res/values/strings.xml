@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">OfflineReader For Reddit</string>
+
+    <!--KEYWORDS-->
+    <string name="keyword_input_hint">Enter Keyword</string>
+
+    <!--COMMENTS-->
+    <string name="btn_load_more_label">LOAD MORE</string>
+
+    <!--SUBREDDITS-->
+    <string name="subreddit_input_hint">Enter subreddit</string>
+    <string name="nsfw_marker">[NSFW]</string>
 </resources>

@@ -2,6 +2,7 @@ package atamayo.offlinereader.Keywords;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -10,26 +11,30 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import atamayo.offlinereader.ConfirmDialog;
+import atamayo.offlinereader.ConfirmDialogListener;
 import atamayo.offlinereader.Data.KeywordsDataSource;
-import atamayo.offlinereader.Data.SubredditsPreference;
+import atamayo.offlinereader.Data.KeywordsPreference;
 import atamayo.offlinereader.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class KeywordsListing extends AppCompatActivity implements KeywordsContract.View, KeywordsListCallback{
+public class KeywordsListing extends AppCompatActivity implements KeywordsContract.View,
+        KeywordsListCallback, ConfirmDialogListener{
     public static final String TAG = "KeywordsListing";
     public static final String SUBREDDIT = "subreddit";
     private KeywordsContract.Presenter mPresenter;
     private KeywordsAdapter mAdapter;
 
     @BindView(R.id.keywords_list) RecyclerView mKeywordsRecyclerView;
-    @BindView(R.id.enter_keyword) AutoCompleteTextView mUserInput;
+    @BindView(R.id.enter_keyword) EditText mUserInput;
     @BindView(R.id.toolbar) Toolbar mToolbar;
     @BindView(R.id.title) TextView mTitle;
 
@@ -59,7 +64,7 @@ public class KeywordsListing extends AppCompatActivity implements KeywordsContra
         mKeywordsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mKeywordsRecyclerView.setAdapter(mAdapter);
 
-        KeywordsDataSource dataSource = new SubredditsPreference(this);
+        KeywordsDataSource dataSource = new KeywordsPreference(this);
         mPresenter = new KeywordsPresenter(dataSource, this);
         mPresenter.initKeywordsList(subreddit);
 
@@ -96,12 +101,12 @@ public class KeywordsListing extends AppCompatActivity implements KeywordsContra
     @Override
     public void showKeywordsList(List<String> keywords) {
         mAdapter.replaceData(keywords);
+        mUserInput.setText("");
     }
 
     @Override
-    public void updateKeywordsList() {
-        mAdapter.notifyDataSetChanged();
-        mUserInput.setText("");
+    public void showMessage(String title, String message){
+        showDialog(title, message);
     }
 
     @Override
@@ -110,7 +115,17 @@ public class KeywordsListing extends AppCompatActivity implements KeywordsContra
     }
 
     @Override
-    public void OnDeleteKeyword(int position){
-        mPresenter.removeKeyword(position);
+    public void OnDeleteKeyword(String keyword){
+        mPresenter.removeKeyword(keyword);
+    }
+
+    @Override
+    public void onConfirmClick(String action){
+
+    }
+
+    private void showDialog(String title, String message){
+        DialogFragment dialog = ConfirmDialog.newInstance(title, message, "");
+        dialog.show(getSupportFragmentManager(), "Dialog");
     }
 }
