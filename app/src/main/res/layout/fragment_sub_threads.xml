@@ -26,7 +26,7 @@
             android:id="@+id/error_msg"
             android:visibility="gone"
             android:textSize="24sp"
-            android:textColor="@color/thread_title_clicked_color"
+            android:textColor="@color/thread_title_color"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"/>

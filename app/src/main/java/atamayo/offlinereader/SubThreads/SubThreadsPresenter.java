@@ -11,7 +11,6 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
     private String mSubreddit;
     private SubredditsDataSource mRepository;
     private SubThreadsContract.View mView;
-
     public SubThreadsPresenter(SubredditsDataSource repository, SubThreadsContract.View view){
         mRepository = repository;
         mView = view;

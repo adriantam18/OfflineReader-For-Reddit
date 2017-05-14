@@ -115,6 +115,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
     @Override
     public void onPause(){
         super.onPause();
+        mPresenter.unsubscribe();
     }
 
     @Override
@@ -164,6 +165,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         mSubThreadsList.setVisibility(View.GONE);
         mErrorMessage.setVisibility(View.VISIBLE);
         mErrorMessage.setText("No threads to show");
+        mRefresh.setRefreshing(false);
     }
 
     @Override

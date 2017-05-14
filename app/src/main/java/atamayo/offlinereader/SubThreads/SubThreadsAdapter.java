@@ -1,7 +1,9 @@
 package atamayo.offlinereader.SubThreads;
 
+import android.os.Build;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,8 +31,8 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         @BindView(R.id.thread_card) CardView cardView;
         @BindView(R.id.score) TextView scoreView;
         @BindView(R.id.thread_title) TextView titleView;
-        @BindView(R.id.label_comments) TextView commentsView;
         @BindView(R.id.num_comments) TextView numCommentsView;
+        @BindView(R.id.author_and_time) TextView authorView;
         @BindColor(R.color.thread_title_color) int defaultColor;
         @BindColor(R.color.thread_title_clicked_color) int clickedColor;
 
@@ -63,9 +65,19 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
     public void onBindViewHolder(SubThreadsAdapter.ViewHolder holder, int position) {
         final RedditThread threadData = mThreadDataList.get(position);
 
-        holder.scoreView.setText(Integer.toString(threadData.getScore()));
+        String authorAndTime = threadData.getAuthor() + " \u2022 " + threadData.getFormattedTime();
+        String numComments = String.valueOf(threadData.getNumComments()) + " comments";
+        String score;
+        if(threadData.getScore() >= 10000){
+            score = String.valueOf(threadData.getScore() / 1000) + "k";
+        }else{
+            score = String.valueOf(threadData.getScore());
+        }
+
+        holder.scoreView.setText(score);
         holder.titleView.setText(threadData.getTitle());
-        holder.numCommentsView.setText(Integer.toString(threadData.getNumComments()));
+        holder.numCommentsView.setText(numComments);
+        holder.authorView.setText(authorAndTime);
 
         if(threadData.getWasClicked()){
             holder.titleView.setTextColor(holder.clickedColor);
