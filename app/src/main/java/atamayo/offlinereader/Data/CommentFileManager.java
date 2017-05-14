@@ -13,6 +13,9 @@ import java.io.InputStreamReader;
 import static android.content.ContentValues.TAG;
 import static android.content.Context.MODE_PRIVATE;
 
+/**
+ * A class responsible for file access using Android's file system.
+ */
 public class CommentFileManager {
     Context mContext;
 
@@ -20,6 +23,12 @@ public class CommentFileManager {
         mContext = context;
     }
 
+    /**
+     * Writes a string into a file and saves it
+     * @param filename identifier for this file
+     * @param data  string to write
+     * @return true if write is successful, false otherwise
+     */
     public boolean writeToFile(String filename, String data){
         try {
             FileOutputStream fos = mContext.openFileOutput(filename, MODE_PRIVATE);
@@ -32,6 +41,11 @@ public class CommentFileManager {
         }
     }
 
+    /**
+     * Loads a string saved in a file
+     * @param filename name of file to load string from
+     * @return string content of file
+     */
     public String loadFile(String filename){
         try {
             FileInputStream fileInputStream = mContext.openFileInput(filename);
@@ -55,6 +69,11 @@ public class CommentFileManager {
         }
     }
 
+    /**
+     * Delets a file
+     * @param filename name of file to delete
+     * @return true if file is deleted, false otherwise
+     */
     public boolean deleteFile(String filename){
         try {
             return mContext.deleteFile(filename);
