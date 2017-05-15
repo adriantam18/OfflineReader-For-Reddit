@@ -1,8 +1,12 @@
 package atamayo.offlinereader.ThreadComments;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.Html;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,12 +14,16 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.xml.sax.XMLReader;
+
 import java.util.List;
 
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import butterknife.BindArray;
+import butterknife.BindColor;
 import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -37,6 +45,8 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         @Nullable @BindView(R.id.title_view) TextView titleView;
         @Nullable @BindView(R.id.time_author_view) TextView timeAuthorView;
         @Nullable @BindView(R.id.self_text_view) TextView selftextView;
+        @BindColor(R.color.thread_title_color) int defaultColor;
+        @BindColor(R.color.thread_title_clicked_color) int clickedColor;
 
         public ThreadViewHolder(View view){
             super(view);
@@ -126,14 +136,38 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
+    private void configureHeaderView(ThreadViewHolder holder){
+        String timeAuthor = thread.getFormattedTime() + " by " + thread.getAuthor();
+        String selftextHtml = thread.getSelftextHtml();
+        if(TextUtils.isEmpty(selftextHtml)){
+            holder.selftextView.setVisibility(View.GONE);
+        }else{
+            holder.selftextView.setVisibility(View.VISIBLE);
+            Spanned html = fromHtml(selftextHtml);
+            holder.selftextView.setText(trim(html, 0, html.length()));
+        }
+
+        holder.titleView.setText(thread.getTitle());
+        if(thread.getWasClicked()){
+            holder.titleView.setTextColor(holder.clickedColor);
+        }else{
+            holder.titleView.setTextColor(holder.defaultColor);
+        }
+
+        holder.timeAuthorView.setText(timeAuthor);
+    }
+
     private void configureCommentViews(CommentViewHolder holder, int position){
         RedditComment comment = mCommentsList.get(position - 1);
         String points = Integer.toString(comment.getScore()) + " points";
-        String time = getTimeString(comment.getCreatedUTC() * 1000);
+        String time = comment.getFormattedTime();
         String info = comment.getAuthor() + " " + points + " " + time;
 
         holder.infoView.setText(info);
-        holder.commentBodyView.setText(comment.getBody());
+        if(!comment.getBodyHtml().isEmpty()) {
+            Spanned spanned = Html.fromHtml(StringEscapeUtils.unescapeHtml4(comment.getBodyHtml()));
+            holder.commentBodyView.setText(trim(spanned, 0, spanned.length()));
+        }
 
         if (position == getItemCount()) {
             holder.divider.setVisibility(View.GONE);
@@ -153,21 +187,6 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         int colorIndex = comment.getDepth() % holder.colors.length;
         int depthMarkerColor = holder.colors[colorIndex];
         holder.depthMarker.setBackgroundColor(depthMarkerColor);
-    }
-
-    private void configureHeaderView(ThreadViewHolder holder){
-        String timeAuthor = getTimeString(thread.getCreatedUTC() * 1000) + " by " + thread.getAuthor();
-        String selftext = thread.getSelftext();
-        if(TextUtils.isEmpty(selftext)){
-            holder.selftextView.setVisibility(View.GONE);
-        }else{
-            holder.selftextView.setVisibility(View.VISIBLE);
-        }
-
-        holder.titleView.setTextColor(Color.RED);
-        holder.titleView.setText(thread.getTitle());
-        holder.timeAuthorView.setText(timeAuthor);
-        holder.selftextView.setText(thread.getSelftext());
     }
 
     private void configureFooterView(FooterViewHolder holder){
@@ -194,39 +213,38 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         notifyDataSetChanged();
     }
 
-    private String getTimeString(long commentPostTime){
+    private Spanned fromHtml(String htmlText){
+        String formatted = StringEscapeUtils.unescapeHtml4(htmlText);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            return Html.fromHtml(formatted, Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST | Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM);
+        }else{
+            return Html.fromHtml(formatted, null, new TagHandler());
+        }
+    }
 
-        long seconds = (System.currentTimeMillis() - commentPostTime ) / 1000;
-        if(seconds < 60){
-            return Long.toString(seconds) + " second(s) ago";
+    private CharSequence trim(CharSequence s, int start, int end){
+        while (start < end && Character.isWhitespace(s.charAt(start))) {
+            start++;
         }
 
-        long minutes = seconds / 60;
-        if(minutes < 60){
-            return Long.toString(minutes) + " minute(s) ago";
+        while (end > start && Character.isWhitespace(s.charAt(end - 1))) {
+            end--;
         }
 
-        long hours = minutes / 60;
-        if(hours < 24){
-            return Long.toString(hours) + " hour(s) ago";
-        }
+        return s.subSequence(start, end);
+    }
 
-        long days = hours / 24;
-        if(days < 7){
-            return Long.toString(days) + " day(s) ago";
-        }
+    private class TagHandler implements Html.TagHandler{
 
-        long weeks = days / 7;
-        if(weeks < 4){
-            return Long.toString(weeks) + " week(s) ago";
-        }
+        @Override
+        public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {
+            if(tag.equals("ul") && !opening){
+                output.append("\n");
+            }
 
-        long months = weeks / 4;
-        if(months < 12){
-            return Long.toString(months) + " month(s) ago";
+            if(tag.equals("li") && opening){
+                output.append("\n* ");
+            }
         }
-
-        long years = months / 12;
-        return Long.toString(years) + " year(s) ago";
     }
 }

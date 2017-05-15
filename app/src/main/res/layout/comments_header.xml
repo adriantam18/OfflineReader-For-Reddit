@@ -3,36 +3,30 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="8dp"
-    android:paddingEnd="8dp">
+    android:paddingStart="@dimen/header_padding_start"
+    android:paddingEnd="@dimen/header_padding_end">
 
     <TextView
         android:id="@+id/title_view"
-        android:textSize="21sp"
-        android:textColor="#FFFFFF"
+        android:textSize="@dimen/header_title_text_size"
+        android:textColor="@color/thread_title_color"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="@dimen/header_margin_bottom"/>
 
     <TextView
         android:id="@+id/time_author_view"
-        android:textSize="15sp"
-        android:textColor="#FFFFFF"
+        android:textSize="@dimen/header_author_time_text_size"
+        android:textColor="@color/thread_author_color"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="@dimen/header_margin_bottom"/>
 
     <TextView
         android:id="@+id/self_text_view"
-        android:textSize="17sp"
-        android:textColor="#FFFFFF"
+        android:textSize="@dimen/header_self_text_size"
+        android:textColor="@color/thread_self_text_color"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/rounded_textview"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
+        android:background="@drawable/rounded_textview"/>
 </LinearLayout>

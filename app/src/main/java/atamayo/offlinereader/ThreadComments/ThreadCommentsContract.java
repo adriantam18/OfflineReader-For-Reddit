@@ -8,13 +8,15 @@ import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 
 public interface ThreadCommentsContract {
     interface View extends BaseView<Presenter>{
-        void showSelfText(RedditThread thread);
+        void showParentThread(RedditThread thread);
         void showComments(List<RedditComment> comments);
         void showMoreComments(List<RedditComment> comments);
+        void showLoading(boolean isLoading);
     }
 
     interface Presenter{
         void initCommentsView(String threadFullName);
         void getMoreComments();
+        void unsubscribe();
     }
 }

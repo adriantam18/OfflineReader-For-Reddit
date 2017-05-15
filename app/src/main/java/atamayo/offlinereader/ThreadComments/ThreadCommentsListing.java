@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -29,8 +30,8 @@ public class ThreadCommentsListing extends Fragment
     public static final String TAG = "ThreadCommentsListing";
     public static final String THREAD_FULL_NAME = "ThreadFullName";
 
-    @BindView(R.id.self_text) TextView mSelfText;
     @BindView(R.id.comments_list) RecyclerView mCommentsList;
+    @BindView(R.id.progress_bar) ProgressBar mProgressBar;
     ThreadCommentsAdapter mAdapter;
     ThreadCommentsContract.Presenter mPresenter;
     Unbinder unbinder;
@@ -72,11 +73,11 @@ public class ThreadCommentsListing extends Fragment
     @Override
     public void onPause(){
         super.onPause();
+        mPresenter.unsubscribe();
     }
 
     @Override
-    public void showSelfText(RedditThread thread){
-        //mSelfText.setText(selfText);
+    public void showParentThread(RedditThread thread){
         mAdapter.addThread(thread);
     }
 
@@ -88,6 +89,15 @@ public class ThreadCommentsListing extends Fragment
     @Override
     public void showMoreComments(List<RedditComment> comments){
         mAdapter.addData(comments);
+    }
+
+    @Override
+    public void showLoading(boolean isLoading){
+        if(isLoading){
+            mProgressBar.setVisibility(View.VISIBLE);
+        }else{
+            mProgressBar.setVisibility(View.GONE);
+        }
     }
 
     @Override
