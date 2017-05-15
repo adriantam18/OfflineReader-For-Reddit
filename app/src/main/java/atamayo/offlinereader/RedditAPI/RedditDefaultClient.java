@@ -8,13 +8,11 @@ import com.google.gson.GsonBuilder;
 
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class RedditOAuthClient {
-    public static final String OAUTH_URL = "https://oauth.reddit.com";
+public class RedditDefaultClient {
+    public static final String API_BASE_URL = "https://www.reddit.com/";
 
     private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
 
@@ -24,23 +22,21 @@ public class RedditOAuthClient {
             .create();
 
     private static Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl(OAUTH_URL)
-            .addConverterFactory(GsonConverterFactory.create(gson))
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create());
+            .baseUrl(API_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create(gson));
 
     private static Retrofit retrofit = builder.build();
+
+    public static <S> S createClass(Class<S> service){
+        return retrofit.create(service);
+    }
 
     public static <S> S createClass(Class<S> service, final String auth, Context context){
         if(!TextUtils.isEmpty(auth)){
             AuthenticationInterceptor interceptor = new AuthenticationInterceptor(auth);
-
-            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-
             ConnectionInterceptor connectionInterceptor = new ConnectionInterceptor(context);
 
             httpClient.addInterceptor(connectionInterceptor);
-            httpClient.addInterceptor(loggingInterceptor);
 
             if(!httpClient.interceptors().contains(interceptor)){
                 httpClient.addInterceptor(interceptor);
@@ -53,5 +49,3 @@ public class RedditOAuthClient {
         return retrofit.create(service);
     }
 }
-
-

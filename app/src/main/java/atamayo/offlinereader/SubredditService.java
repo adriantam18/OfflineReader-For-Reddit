@@ -6,34 +6,27 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.util.Pair;
 import android.util.Log;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import atamayo.offlinereader.Data.KeywordsDataSource;
 import atamayo.offlinereader.Data.SubredditsDataSource;
-import atamayo.offlinereader.Data.SubredditsPreference;
+import atamayo.offlinereader.Data.KeywordsPreference;
 import atamayo.offlinereader.Data.SubredditsRepository;
-import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
-import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
-import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
-import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
-import atamayo.offlinereader.RedditAPI.RedditObjectDeserializer;
 import atamayo.offlinereader.RedditDAO.DaoSession;
 import atamayo.offlinereader.Data.CommentFileManager;
-import atamayo.offlinereader.Utils.NetworkResponse;
 import atamayo.offlinereader.Utils.RedditDownloader;
+import io.reactivex.Observable;
 
 public class SubredditService extends IntentService {
     private final static String TAG = "Subreddit_Service";
     private SubredditsDataSource mRepository;
     private KeywordsDataSource mKeywords;
     private NotificationCompat.Builder mBuilder;
-    private CommentFileManager commentFileManager;
     private RedditDownloader redditDownloader;
 
     public SubredditService(){
@@ -44,58 +37,37 @@ public class SubredditService extends IntentService {
     public void onHandleIntent(Intent intent){
         Log.d(TAG, "Starting download");
         DaoSession daoSession = ((App) getApplication()).getDaoSession();
-        commentFileManager = new CommentFileManager(this);
         mRepository = new SubredditsRepository(daoSession.getRedditThreadDao(),
-                daoSession.getSubredditDao(), commentFileManager);
-        mKeywords = new SubredditsPreference(this);
+                daoSession.getSubredditDao(), new CommentFileManager(this));
+        mKeywords = new KeywordsPreference(this);
         redditDownloader = new RedditDownloader(this);
+
+        redditDownloader.init();
 
         setupNotif();
 
         List<String> subsToDownload = intent.getStringArrayListExtra("subreddits");
 
-        if(subsToDownload != null) {
+        if (subsToDownload != null) {
             for (final String subreddit : subsToDownload) {
-                List<String> keywords = mKeywords.getKeywords(subreddit);
-                redditDownloader.downloadThreads(subreddit, keywords, new NetworkResponse<List<RedditThread>>() {
-                    @Override
-                    public void onSuccess(List<RedditThread> object) {
-                        if(!object.isEmpty()) {
-                            downloadComments(subreddit, object);
-                        }
-                    }
-
-                    @Override
-                    public void onError(String message) {
-
-                    }
-                });
+                List<String> keywords = new ArrayList<>(mKeywords.getKeywords(subreddit));
+                redditDownloader.getThreads(subreddit, keywords)
+                        .flatMap(redditThreads -> Observable.fromIterable(redditThreads))
+                        .filter(redditThread -> mRepository.addRedditThread(redditThread))
+                        .concatMap(redditThread ->
+                                Observable.just(Pair.create(redditThread.getFullName(),
+                                        redditDownloader.getComments(subreddit, redditThread.getThreadId())))
+                                        .delay(1, TimeUnit.SECONDS))
+                        .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second),
+                                throwable -> {},
+                                this::sendNotification);
             }
         }
 
         Log.d(TAG, "Finished downloading");
     }
 
-    private void downloadComments(String subreddit, List<RedditThread> threads){
-            for (final RedditThread thread : threads) {
-                if (mRepository.addRedditThread(thread)) {
-                    redditDownloader.downloadComments(subreddit, thread.getThreadId(), new NetworkResponse<String>() {
-                        @Override
-                        public void onSuccess(String object) {
-                            commentFileManager.writeToFile(thread.getFullName(), object);
-                        }
-
-                        @Override
-                        public void onError(String message) {
-
-                        }
-                    });
-                }
-            }
-    }
-
-    @Override
-    public void onDestroy() {
+    private void sendNotification(){
         int notificationId = 1001;
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify(notificationId, mBuilder.build());

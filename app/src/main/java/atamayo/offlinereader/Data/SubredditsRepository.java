@@ -11,6 +11,7 @@ import org.greenrobot.greendao.query.DeleteQuery;
 import java.util.ArrayList;
 import java.util.List;
 
+import atamayo.offlinereader.RedditAPI.DuplicateSubredditException;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
@@ -19,9 +20,13 @@ import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereader.RedditDAO.RedditThreadDao;
 import atamayo.offlinereader.RedditDAO.SubredditDao;
+import io.reactivex.Observable;
 
+/**
+ * Implementation of SubredditsDataSource that uses a combination of GreenDao
+ * and Android's file system to save subreddits, threads, and comments.
+ */
 public class SubredditsRepository implements SubredditsDataSource {
-    private static SubredditsRepository instance = null;
     private RedditThreadDao mThreadDao;
     private SubredditDao mSubsDao;
     private CommentFileManager mCommentFileManager;
@@ -35,23 +40,36 @@ public class SubredditsRepository implements SubredditsDataSource {
     @Override
     public boolean addSubreddit(Subreddit subreddit) {
         try {
-            mSubsDao.insert(subreddit);
-            return true;
+            if(subreddit != null && subreddit.getDisplayName() != null) {
+                mSubsDao.insert(subreddit);
+                return true;
+            }else{
+                return false;
+            }
         }catch (SQLiteConstraintException e){
             Log.e("Sub Repository", e.toString());
-            return false;
+            throw new DuplicateSubredditException();
         }
     }
 
     @Override
     public boolean addRedditThread(RedditThread thread) {
         try {
-            mThreadDao.insertOrReplace(thread);
-            return true;
+            if(thread != null && thread.getFullName() != null) {
+                mThreadDao.insertOrReplace(thread);
+                return true;
+            }else{
+                return false;
+            }
         }catch (SQLiteConstraintException e){
             Log.e("Sub Repo", e.toString());
             return false;
         }
+    }
+
+    @Override
+    public boolean addRedditComments(String threadFullName, String comments){
+        return mCommentFileManager.writeToFile(threadFullName, comments);
     }
 
     @Override
@@ -77,7 +95,7 @@ public class SubredditsRepository implements SubredditsDataSource {
     }
 
     @Override
-    public List<RedditComment> getCommentsForThread(String threadFullName, int limit, int offset){
+    public List<RedditComment> getCommentsForThread(String threadFullName, int offset, int limit){
         List<RedditComment> comments = new ArrayList<>();
         Gson gson = new GsonBuilder()
                 .excludeFieldsWithoutExposeAnnotation()
@@ -90,8 +108,8 @@ public class SubredditsRepository implements SubredditsDataSource {
         if(objects[1] instanceof RedditListing){
             RedditListing listings = (RedditListing) objects[1];
             List<RedditObject> commentListings = listings.getChildren();
-
             int last = limit + offset;
+
             for(int i = offset; i < last; i++){
                 try {
                     RedditObject commentListing = commentListings.get(i);
@@ -122,6 +140,11 @@ public class SubredditsRepository implements SubredditsDataSource {
                 }
             }
         }
+    }
+
+    @Override
+    public Observable<List<RedditThread>> getThreads(String subredditName){
+        return Observable.just(getRedditThreads(subredditName));
     }
 
     @Override
