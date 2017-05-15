@@ -18,7 +18,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -54,11 +57,12 @@ public class SubredditsListing extends Fragment
     private OnSubredditSelectedListener mCallback;
     private SubredditsContract.Presenter mPresenter;
 
-    @BindView(R.id.enter_item) AutoCompleteTextView mEnterItem;
+    @BindView(R.id.enter_item) EditText mEnterItem;
     @BindView(R.id.subs_list) RecyclerView mSubsRecyclerView;
     @BindView(R.id.show_loading) ProgressBar mProgessBar;
     @BindView(R.id.toolbar) Toolbar mToolbar;
     @BindView(R.id.title) TextView mTitle;
+    @BindView(R.id.btn_add_subreddit) ImageButton mBtnAdd;
 
     public interface OnSubredditSelectedListener{
         void launchThreadsListing(Bundle args);
@@ -108,11 +112,14 @@ public class SubredditsListing extends Fragment
     @Override
     public void onPause(){
         super.onPause();
+        mPresenter.unsubscribe();
     }
 
     @Override
     public void onDestroyView(){
         super.onDestroyView();
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(mEnterItem.getWindowToken(), 0);
         unbinder.unbind();
     }
 
@@ -202,6 +209,17 @@ public class SubredditsListing extends Fragment
     @Override
     public void showError(String message) {
         showConfirmDialog("ERROR", message, "");
+    }
+
+    @Override
+    public void showLoading(boolean isLoading){
+        if(isLoading){
+            mProgessBar.setVisibility(View.VISIBLE);
+            mBtnAdd.setEnabled(false);
+        }else {
+            mProgessBar.setVisibility(View.GONE);
+            mBtnAdd.setEnabled(true);
+        }
     }
 
     @Override

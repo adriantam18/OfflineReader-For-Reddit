@@ -13,6 +13,7 @@ public interface SubredditsContract {
         void showSubredditKeywords(String subredditName);
         void showClearedSubreddits();
         void showError(String message);
+        void showLoading(boolean isLoading);
     }
 
     interface Presenter {
@@ -22,5 +23,6 @@ public interface SubredditsContract {
         void clearSubreddits();
         void openSubredditKeywords(Subreddit subreddit);
         void openSubredditThreads(Subreddit subreddit);
+        void unsubscribe();
     }
 }
