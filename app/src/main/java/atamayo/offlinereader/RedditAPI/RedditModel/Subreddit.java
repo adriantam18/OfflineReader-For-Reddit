@@ -21,12 +21,15 @@ public class Subreddit extends RedditObject {
     String displayName;
 
     @Expose
+    @SerializedName("display_name_prefixed")
+    String displayNamePrefixed;
+
+    @Expose
     int susbscribers;
 
     @Expose
     boolean over18;
 
-    @Generated(hash = 1278174245)
     public Subreddit(Long id, String displayName, int susbscribers,
             boolean over18) {
         this.id = id;
@@ -35,8 +38,17 @@ public class Subreddit extends RedditObject {
         this.over18 = over18;
     }
 
-    @Generated(hash = 2105214667)
     public Subreddit() {
+    }
+
+    @Generated(hash = 914230089)
+    public Subreddit(Long id, String displayName, String displayNamePrefixed,
+            int susbscribers, boolean over18) {
+        this.id = id;
+        this.displayName = displayName;
+        this.displayNamePrefixed = displayNamePrefixed;
+        this.susbscribers = susbscribers;
+        this.over18 = over18;
     }
 
     public Long getId() {
@@ -53,6 +65,14 @@ public class Subreddit extends RedditObject {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getDisplayNamePrefixed() {
+        return displayNamePrefixed;
+    }
+
+    public void setDisplayNamePrefixed(String displayNamePrefixed) {
+        this.displayNamePrefixed = displayNamePrefixed;
     }
 
     public int getSusbscribers() {

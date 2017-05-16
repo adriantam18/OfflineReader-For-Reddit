@@ -74,7 +74,7 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
         }else {
             holder.mNSFWMarker.setVisibility(View.GONE);
         }
-        holder.mSubredditsName.setText(mFilteredList.get(position).getDisplayName());
+        holder.mSubredditsName.setText(mFilteredList.get(position).getDisplayNamePrefixed());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
 
                 constraint = constraint.toString().toLowerCase();
                 for(int i = 0; i < mOriginalList.size(); i++){
-                    String subName = mOriginalList.get(i).getDisplayName();
+                    String subName = mOriginalList.get(i).getDisplayNamePrefixed();
                     if(subName.toLowerCase().startsWith(constraint.toString())){
                         filteredArray.add(mOriginalList.get(i));
                     }

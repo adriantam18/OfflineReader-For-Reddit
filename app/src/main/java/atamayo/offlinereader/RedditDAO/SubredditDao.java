@@ -26,8 +26,9 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
     public static class Properties {
         public final static Property Id = new Property(0, Long.class, "id", true, "_id");
         public final static Property DisplayName = new Property(1, String.class, "displayName", false, "DISPLAY_NAME");
-        public final static Property Susbscribers = new Property(2, int.class, "susbscribers", false, "SUSBSCRIBERS");
-        public final static Property Over18 = new Property(3, boolean.class, "over18", false, "OVER18");
+        public final static Property DisplayNamePrefixed = new Property(2, String.class, "displayNamePrefixed", false, "DISPLAY_NAME_PREFIXED");
+        public final static Property Susbscribers = new Property(3, int.class, "susbscribers", false, "SUSBSCRIBERS");
+        public final static Property Over18 = new Property(4, boolean.class, "over18", false, "OVER18");
     }
 
 
@@ -45,8 +46,9 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
         db.execSQL("CREATE TABLE " + constraint + "\"SUBREDDITS_LIST\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY ," + // 0: id
                 "\"DISPLAY_NAME\" TEXT," + // 1: displayName
-                "\"SUSBSCRIBERS\" INTEGER NOT NULL ," + // 2: susbscribers
-                "\"OVER18\" INTEGER NOT NULL );"); // 3: over18
+                "\"DISPLAY_NAME_PREFIXED\" TEXT," + // 2: displayNamePrefixed
+                "\"SUSBSCRIBERS\" INTEGER NOT NULL ," + // 3: susbscribers
+                "\"OVER18\" INTEGER NOT NULL );"); // 4: over18
         // Add Indexes
         db.execSQL("CREATE UNIQUE INDEX " + constraint + "IDX_SUBREDDITS_LIST_DISPLAY_NAME ON SUBREDDITS_LIST" +
                 " (\"DISPLAY_NAME\" ASC);");
@@ -71,8 +73,13 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
         if (displayName != null) {
             stmt.bindString(2, displayName);
         }
-        stmt.bindLong(3, entity.getSusbscribers());
-        stmt.bindLong(4, entity.getOver18() ? 1L: 0L);
+ 
+        String displayNamePrefixed = entity.getDisplayNamePrefixed();
+        if (displayNamePrefixed != null) {
+            stmt.bindString(3, displayNamePrefixed);
+        }
+        stmt.bindLong(4, entity.getSusbscribers());
+        stmt.bindLong(5, entity.getOver18() ? 1L: 0L);
     }
 
     @Override
@@ -88,8 +95,13 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
         if (displayName != null) {
             stmt.bindString(2, displayName);
         }
-        stmt.bindLong(3, entity.getSusbscribers());
-        stmt.bindLong(4, entity.getOver18() ? 1L: 0L);
+ 
+        String displayNamePrefixed = entity.getDisplayNamePrefixed();
+        if (displayNamePrefixed != null) {
+            stmt.bindString(3, displayNamePrefixed);
+        }
+        stmt.bindLong(4, entity.getSusbscribers());
+        stmt.bindLong(5, entity.getOver18() ? 1L: 0L);
     }
 
     @Override
@@ -102,8 +114,9 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
         Subreddit entity = new Subreddit( //
             cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
             cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1), // displayName
-            cursor.getInt(offset + 2), // susbscribers
-            cursor.getShort(offset + 3) != 0 // over18
+            cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2), // displayNamePrefixed
+            cursor.getInt(offset + 3), // susbscribers
+            cursor.getShort(offset + 4) != 0 // over18
         );
         return entity;
     }
@@ -112,8 +125,9 @@ public class SubredditDao extends AbstractDao<Subreddit, Long> {
     public void readEntity(Cursor cursor, Subreddit entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setDisplayName(cursor.isNull(offset + 1) ? null : cursor.getString(offset + 1));
-        entity.setSusbscribers(cursor.getInt(offset + 2));
-        entity.setOver18(cursor.getShort(offset + 3) != 0);
+        entity.setDisplayNamePrefixed(cursor.isNull(offset + 2) ? null : cursor.getString(offset + 2));
+        entity.setSusbscribers(cursor.getInt(offset + 3));
+        entity.setOver18(cursor.getShort(offset + 4) != 0);
      }
     
     @Override
