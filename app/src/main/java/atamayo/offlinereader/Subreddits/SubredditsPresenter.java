@@ -6,7 +6,6 @@ import atamayo.offlinereader.RedditAPI.InvalidSubredditException;
 import atamayo.offlinereader.RedditAPI.NoConnectionException;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereader.Utils.RedditDownloader;
-import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -22,12 +21,7 @@ public class SubredditsPresenter implements SubredditsContract.Presenter{
         mRepository = repository;
         mView = view;
         mDownloader = downloader;
-
         disposables = new CompositeDisposable();
-        disposables.add(Completable.fromAction(() -> mDownloader.init())
-                            .subscribeOn(Schedulers.io())
-                            .subscribe(() -> {},
-                                    throwable -> {}));
     }
 
     @Override

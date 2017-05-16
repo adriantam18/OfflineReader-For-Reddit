@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RedditDefaultClient {
@@ -23,7 +24,8 @@ public class RedditDefaultClient {
 
     private static Retrofit.Builder builder = new Retrofit.Builder()
             .baseUrl(API_BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create(gson));
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create());
 
     private static Retrofit retrofit = builder.build();
 

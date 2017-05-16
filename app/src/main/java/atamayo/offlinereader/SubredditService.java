@@ -42,8 +42,6 @@ public class SubredditService extends IntentService {
         mKeywords = new KeywordsPreference(this);
         redditDownloader = new RedditDownloader(this);
 
-        redditDownloader.init();
-
         setupNotif();
 
         List<String> subsToDownload = intent.getStringArrayListExtra("subreddits");
