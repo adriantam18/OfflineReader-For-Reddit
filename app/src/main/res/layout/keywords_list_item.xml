@@ -16,10 +16,10 @@
         android:textColor="@color/subreddit_list_item_color"/>
 
     <ImageButton
-        android:src="@drawable/ic_clear_white_18dp"
+        android:contentDescription="@string/remove_item"
+        android:src="@drawable/ic_clear_white_24dp"
         android:background="@color/screen_background_color"
         android:tint="@color/remove_subreddit_color"
-        android:scaleType="fitCenter"
         android:id="@+id/btn_remove_keyword"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"

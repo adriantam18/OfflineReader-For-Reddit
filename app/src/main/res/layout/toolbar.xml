@@ -8,6 +8,7 @@
     android:background="#041A3D"
     android:elevation="16dp"
     android:theme="@style/AppTheme"
+    android:minHeight="56dp"
     app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
         <TextView

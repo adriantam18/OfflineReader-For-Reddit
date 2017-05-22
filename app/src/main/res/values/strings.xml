@@ -10,4 +10,7 @@
     <!--SUBREDDITS-->
     <string name="subreddit_input_hint">Enter subreddit</string>
     <string name="nsfw_marker">[NSFW]</string>
+
+    <string name="add_item">Add item</string>
+    <string name="remove_item">Remove item</string>
 </resources>

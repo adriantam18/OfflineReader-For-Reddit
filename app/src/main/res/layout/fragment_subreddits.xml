@@ -38,10 +38,10 @@
             android:textColorHint="@color/search_subreddit_color"
             android:textColor="@color/search_subreddit_color"/>
         <ImageButton
+            android:contentDescription="@string/add_item"
             android:id="@+id/btn_add_subreddit"
-            android:src="@drawable/ic_add_circle_white_24dp"
+            android:src="@drawable/ic_add_circle_white_36dp"
             android:background="@color/screen_background_color"
-            android:scaleType="fitCenter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical" />
