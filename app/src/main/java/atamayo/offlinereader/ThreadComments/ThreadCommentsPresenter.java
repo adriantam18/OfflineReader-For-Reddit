@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 
 import atamayo.offlinereader.Data.*;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -15,9 +16,9 @@ import io.reactivex.schedulers.Schedulers;
 public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter {
     private ThreadCommentsContract.View mView;
     private SubredditsDataSource mRepository;
-    private String mThreadFullName;
     private int mLimit = 10;
     private int mOffset;
+    private RedditThread mCurrentThread;
     private CompositeDisposable disposables;
 
     public ThreadCommentsPresenter(SubredditsDataSource dataSource, ThreadCommentsContract.View view){
@@ -29,8 +30,8 @@ public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter
 
     @Override
     public void initCommentsView(String threadFullName) {
-        mThreadFullName = threadFullName;
-        mView.showParentThread(mRepository.getRedditThread(mThreadFullName));
+        mCurrentThread = mRepository.getRedditThread(threadFullName);
+        mView.showParentThread(mCurrentThread);
         getComms(false);
     }
 
@@ -44,7 +45,7 @@ public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter
         Observable<List<RedditComment>> commentObservable = Observable.fromCallable(new Callable<List<RedditComment>>() {
             @Override
             public List<RedditComment> call() throws Exception {
-                return mRepository.getCommentsForThread(mThreadFullName, mOffset, mLimit);
+                return mRepository.getCommentsForThread(mCurrentThread.getCommentFileName(), mOffset, mLimit);
             }
         });
 

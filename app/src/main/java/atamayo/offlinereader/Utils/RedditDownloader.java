@@ -5,6 +5,11 @@ import android.content.SharedPreferences;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.model.LazyHeaders;
 
 import org.json.JSONObject;
 
@@ -14,13 +19,18 @@ import java.util.List;
 import atamayo.offlinereader.RedditAPI.InvalidSubredditException;
 import atamayo.offlinereader.RedditAPI.RedditDefaultClient;
 import atamayo.offlinereader.RedditAPI.RedditDefaultService;
+import atamayo.offlinereader.RedditAPI.RedditModel.Gif;
+import atamayo.offlinereader.RedditAPI.RedditModel.Image;
+import atamayo.offlinereader.RedditAPI.RedditModel.Preview;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditResponse;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
+import atamayo.offlinereader.RedditAPI.RedditModel.Variant;
 import atamayo.offlinereader.RedditAPI.RedditOAuthClient;
 import atamayo.offlinereader.RedditAPI.RedditOAuthService;
 import io.reactivex.Observable;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -32,6 +42,7 @@ import okhttp3.ResponseBody;
  */
 public class RedditDownloader {
     private final static String TAG = "REDDIT DOWNLOADER";
+    private final static byte[] EMPTY_MEDIA = {};
 
     public final static String CLIENT_ID = "YOUR CLIENT ID";
     public final static String CLIENT_SECRET = "YOUR CLIENT SECRET";
@@ -139,10 +150,13 @@ public class RedditDownloader {
      * @return true if title contains at least one word from the list, false otherwise
      */
     private boolean containsKeyword(String title, List<String> keywords) {
-        title = title.toLowerCase();
-        for (String keyword : keywords) {
-            if (title.contains(keyword.toLowerCase()))
-                return true;
+        String[] words = title.split("\\s+");
+        for(String word : words){
+            for(String keyword : keywords){
+                if(word.toLowerCase().contains(keyword.toLowerCase())){
+                    return true;
+                }
+            }
         }
 
         return false;
@@ -154,10 +168,9 @@ public class RedditDownloader {
      * @param threadId id of thread where comments are posted
      * @return json string from reddit or empty string if request failed
      */
-    private String executeCommentsRequest(String subreddit, String threadId) {
+    private Observable<String> executeCommentsRequest(String subreddit, String threadId) {
         Observable<ResponseBody> observable = redditOauth.listCommentsJson(subreddit, threadId);
-        return observable.map(responseBody -> responseBody.string())
-                .blockingFirst("");
+        return observable.map(responseBody -> responseBody.string());
     }
 
     /**
@@ -167,20 +180,19 @@ public class RedditDownloader {
      * @param threadId id of thread where comments are posted
      * @return json string from reddit or empty string if request failed or service could not be initialized
      */
-    public String getComments(String subreddit, String threadId) {
+    public Observable<String> getComments(String subreddit, String threadId) {
         if (!needsToken()) {
             return executeCommentsRequest(subreddit, threadId);
         } else {
             return getToken()
-                    .map(result -> {
+                    .flatMap(result -> {
                         if (result) {
                             redditOauth = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
                             return executeCommentsRequest(subreddit, threadId);
                         } else {
-                            return "";
+                            return Observable.just("");
                         }
-                    })
-                    .blockingFirst("");
+                    });
         }
     }
 
@@ -255,5 +267,58 @@ public class RedditDownloader {
                         }
                     });
         }
+    }
+
+    /**
+     * Downloads the image from a given url.
+     * @param mediaUrl url to download image from
+     * @return byte array with contents of the image
+     */
+    private Observable<byte[]> downloadImage(String mediaUrl, int targetWidth, int targetHeight){
+        GlideUrl url = new GlideUrl(mediaUrl,
+                new LazyHeaders.Builder()
+                        .addHeader(AUTHORIZATION, getAuthHeader())
+                        .addHeader(USER_AGENT, CUSTOM_USER_AGENT)
+                        .build());
+        try {
+            return Observable.just(Glide.with(context).load(url)
+                    .asBitmap()
+                    .toBytes()
+                    .into(targetWidth, targetHeight)
+                    .get());
+        }catch (Exception e){
+            Log.d(TAG, e.toString());
+            return Observable.just(EMPTY_MEDIA);
+        }
+    }
+
+    /**
+     * Downloads the image from a given Reddit thread.
+     * @param thread Reddit thread to download image from
+     * @return byte array with contents of the image
+     */
+    public Observable<byte[]> downloadImage(RedditThread thread, int targetWidth, int targetHeight){
+        Preview preview = thread.getPreview();
+
+        if(preview != null) {
+            Image image = preview.getImages().get(0);
+            Variant variant = image.getVariants();
+            Gif gif = variant.getGif();
+
+            if (gif == null) {
+                if (!needsToken()) {
+                    return downloadImage(image.getSource().getUrl(), targetWidth, targetHeight);
+                } else {
+                    return getToken().flatMap(result -> {
+                        if (result)
+                            return downloadImage(image.getSource().getUrl(), targetWidth, targetHeight);
+                        else
+                            return Observable.just(EMPTY_MEDIA);
+                    });
+                }
+            }
+        }
+
+        return Observable.just(EMPTY_MEDIA);
     }
 }

@@ -17,8 +17,9 @@ import atamayo.offlinereader.Data.KeywordsDataSource;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.KeywordsPreference;
 import atamayo.offlinereader.Data.SubredditsRepository;
+import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditDAO.DaoSession;
-import atamayo.offlinereader.Data.CommentFileManager;
+import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.Utils.RedditDownloader;
 import io.reactivex.Observable;
 
@@ -38,7 +39,7 @@ public class SubredditService extends IntentService {
         Log.d(TAG, "Starting download");
         DaoSession daoSession = ((App) getApplication()).getDaoSession();
         mRepository = new SubredditsRepository(daoSession.getRedditThreadDao(),
-                daoSession.getSubredditDao(), new CommentFileManager(this));
+                daoSession.getSubredditDao(), new FileManager(this));
         mKeywords = new KeywordsPreference(this);
         redditDownloader = new RedditDownloader(this);
 
@@ -51,12 +52,15 @@ public class SubredditService extends IntentService {
                 List<String> keywords = new ArrayList<>(mKeywords.getKeywords(subreddit));
                 redditDownloader.getThreads(subreddit, keywords)
                         .flatMap(redditThreads -> Observable.fromIterable(redditThreads))
-                        .filter(redditThread -> mRepository.addRedditThread(redditThread))
                         .concatMap(redditThread ->
-                                Observable.just(Pair.create(redditThread.getFullName(),
-                                        redditDownloader.getComments(subreddit, redditThread.getThreadId())))
+                                Observable.just(redditThread)
                                         .delay(1, TimeUnit.SECONDS))
-                        .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second),
+                        .doOnNext(redditThread ->
+                                redditThread.setImageBytes(redditDownloader.downloadImage(redditThread, 216, 384).blockingFirst(new byte[]{})))
+                        .filter(redditThread -> mRepository.addRedditThread(redditThread))
+                        .map(redditThread ->
+                                Pair.create(redditThread, redditDownloader.getComments(redditThread.getSubreddit(), redditThread.getThreadId())))
+                        .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingFirst("")),
                                 throwable -> {},
                                 this::sendNotification);
             }

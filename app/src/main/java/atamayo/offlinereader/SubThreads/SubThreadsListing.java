@@ -1,5 +1,6 @@
 package atamayo.offlinereader.SubThreads;
 
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -31,7 +32,7 @@ import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditDAO.DaoSession;
 import atamayo.offlinereader.SubredditService;
-import atamayo.offlinereader.Data.CommentFileManager;
+import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -73,7 +74,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         setHasOptionsMenu(true);
 
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
-        CommentFileManager commentFileManager = new CommentFileManager(getActivity());
+        FileManager commentFileManager = new FileManager(getActivity());
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), commentFileManager);
         mPresenter = new SubThreadsPresenter(repository, this);
         mAdapter = new SubThreadsAdapter(new ArrayList<RedditThread>(), this);
@@ -115,7 +116,6 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
     @Override
     public void onPause(){
         super.onPause();
-        mPresenter.unsubscribe();
     }
 
     @Override
@@ -152,10 +152,14 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
 
     @Override
     public void showInitialThreads(List<RedditThread> threads) {
-        mAdapter.replaceData(threads);
+        if(!threads.isEmpty()) {
+            mAdapter.replaceData(threads);
 
-        mSubThreadsList.setVisibility(View.VISIBLE);
-        mErrorMessage.setVisibility(View.GONE);
+            mSubThreadsList.setVisibility(View.VISIBLE);
+            mErrorMessage.setVisibility(View.GONE);
+        }else{
+            showEmptyThreads();
+        }
 
         mRefresh.setRefreshing(false);
     }
@@ -181,6 +185,8 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         Intent intent = new Intent(getActivity(), SubredditService.class);
         intent.putExtra("subreddits", (ArrayList<String>) subreddits);
         getActivity().startService(intent);
+
+        Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_SHORT).show();
     }
 
     @Override

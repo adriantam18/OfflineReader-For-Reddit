@@ -22,11 +22,26 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/header_margin_bottom"/>
 
-    <TextView
-        android:id="@+id/self_text_view"
-        android:textSize="@dimen/header_self_text_size"
-        android:textColor="@color/thread_self_text_color"
+    <LinearLayout
+        android:id="@+id/content"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rounded_textview"/>
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/header_margin_bottom"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/self_text_view"
+            android:textSize="@dimen/header_self_text_size"
+            android:textColor="@color/thread_self_text_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_textview"
+            android:visibility="gone"/>
+    </LinearLayout>
 </LinearLayout>

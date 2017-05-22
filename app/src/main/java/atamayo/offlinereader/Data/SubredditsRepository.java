@@ -29,12 +29,12 @@ import io.reactivex.Observable;
 public class SubredditsRepository implements SubredditsDataSource {
     private RedditThreadDao mThreadDao;
     private SubredditDao mSubsDao;
-    private CommentFileManager mCommentFileManager;
+    private FileManager mFileManager;
 
-    public SubredditsRepository(RedditThreadDao threadDao, SubredditDao subDao, CommentFileManager commentFileManager){
+    public SubredditsRepository(RedditThreadDao threadDao, SubredditDao subDao, FileManager fileManager){
         mThreadDao = threadDao;
         mSubsDao = subDao;
-        mCommentFileManager = commentFileManager;
+        mFileManager = fileManager;
     }
 
     @Override
@@ -56,6 +56,7 @@ public class SubredditsRepository implements SubredditsDataSource {
     public boolean addRedditThread(RedditThread thread) {
         try {
             if(thread != null && thread.getFullName() != null) {
+                thread.setMediaPath(mFileManager.writeToFile(thread.getMediaFileName(), thread.getImageBytes()));
                 mThreadDao.insertOrReplace(thread);
                 return true;
             }else{
@@ -68,8 +69,16 @@ public class SubredditsRepository implements SubredditsDataSource {
     }
 
     @Override
-    public boolean addRedditComments(String threadFullName, String comments){
-        return mCommentFileManager.writeToFile(threadFullName, comments);
+    public boolean addRedditComments(RedditThread thread, String comments){
+        String path = mFileManager.writeToFile(thread.getCommentFileName(), comments.getBytes());
+        thread.setCommentPath(path);
+        updateThread(thread);
+        return !path.isEmpty();
+    }
+
+    @Override
+    public void updateThread(RedditThread thread){
+        mThreadDao.update(thread);
     }
 
     @Override
@@ -102,7 +111,7 @@ public class SubredditsRepository implements SubredditsDataSource {
                 .registerTypeAdapter(RedditObject.class, new RedditObjectDeserializer())
                 .create();
 
-        String json = mCommentFileManager.loadFile(threadFullName);
+        String json = mFileManager.loadFile(threadFullName);
         RedditObject[] objects = gson.fromJson(json, RedditObject[].class);
 
         if(objects[1] instanceof RedditListing){
@@ -171,6 +180,7 @@ public class SubredditsRepository implements SubredditsDataSource {
         List<RedditThread> threads = getRedditThreads(subredditName);
         for(RedditThread thread : threads){
             deleteAllCommentsFromThread(thread.getFullName());
+            mFileManager.deleteFile(thread.getMediaFileName());
         }
 
         DeleteQuery deleteQuery = mThreadDao.queryBuilder()
@@ -181,6 +191,9 @@ public class SubredditsRepository implements SubredditsDataSource {
 
     @Override
     public void deleteRedditThread(String threadFullname) {
+        RedditThread thread = getRedditThread(threadFullname);
+        mFileManager.deleteFile(thread.getMediaFileName());
+
         deleteAllCommentsFromThread(threadFullname);
 
         DeleteQuery deleteQuery = mThreadDao.queryBuilder()
@@ -191,6 +204,7 @@ public class SubredditsRepository implements SubredditsDataSource {
 
     @Override
     public void deleteAllCommentsFromThread(String threadFullName){
-        mCommentFileManager.deleteFile(threadFullName);
+        RedditThread thread = getRedditThread(threadFullName);
+        mFileManager.deleteFile(thread.getCommentFileName());
     }
 }

@@ -10,7 +10,9 @@ import io.reactivex.Observable;
 public interface SubredditsDataSource {
     boolean addSubreddit(Subreddit subreddit);
     boolean addRedditThread(RedditThread thread);
-    boolean addRedditComments(String threadFullName, String comments);
+    boolean addRedditComments(RedditThread thread, String comments);
+
+    void updateThread(RedditThread thread);
 
     List<Subreddit> getSubreddits();
     List<RedditThread> getRedditThreads(String subredditName);

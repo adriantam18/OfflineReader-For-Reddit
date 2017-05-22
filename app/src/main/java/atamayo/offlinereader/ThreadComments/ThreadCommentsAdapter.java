@@ -1,6 +1,8 @@
 package atamayo.offlinereader.ThreadComments;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
@@ -12,11 +14,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.gif.GifDrawableTransformation;
+import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.xml.sax.XMLReader;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import atamayo.offlinereader.R;
@@ -30,20 +40,25 @@ import butterknife.ButterKnife;
 
 public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<RedditComment> mCommentsList;
+    private List<RedditComment> mRecentlyLoadedComments;
     private LoadCommentsCallback mCallback;
     private RedditThread thread;
     private static final int VIEW_HEADER = R.layout.comments_header;
     private static final int VIEW_FOOTER = R.layout.comments_footer;
     private static final int VIEW_ITEM = R.layout.comments_list_item;
+    private Context mContext;
 
-    public ThreadCommentsAdapter(List<RedditComment> comments, LoadCommentsCallback callback){
+    public ThreadCommentsAdapter(List<RedditComment> comments, LoadCommentsCallback callback, Context context){
         mCommentsList = comments;
+        mRecentlyLoadedComments = new ArrayList<>();
         mCallback = callback;
+        mContext = context;
     }
 
     public class ThreadViewHolder extends RecyclerView.ViewHolder {
         @Nullable @BindView(R.id.title_view) TextView titleView;
         @Nullable @BindView(R.id.time_author_view) TextView timeAuthorView;
+        @Nullable @BindView(R.id.image) ImageView imageView;
         @Nullable @BindView(R.id.self_text_view) TextView selftextView;
         @BindColor(R.color.thread_title_color) int defaultColor;
         @BindColor(R.color.thread_title_clicked_color) int clickedColor;
@@ -137,7 +152,16 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureHeaderView(ThreadViewHolder holder){
+        holder.titleView.setText(thread.getTitle());
+        if(thread.getWasClicked()){
+            holder.titleView.setTextColor(holder.clickedColor);
+        }else{
+            holder.titleView.setTextColor(holder.defaultColor);
+        }
+
         String timeAuthor = thread.getFormattedTime() + " by " + thread.getAuthor();
+        holder.timeAuthorView.setText(timeAuthor);
+
         String selftextHtml = thread.getSelftextHtml();
         if(TextUtils.isEmpty(selftextHtml)){
             holder.selftextView.setVisibility(View.GONE);
@@ -147,25 +171,26 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
             holder.selftextView.setText(trim(html, 0, html.length()));
         }
 
-        holder.titleView.setText(thread.getTitle());
-        if(thread.getWasClicked()){
-            holder.titleView.setTextColor(holder.clickedColor);
-        }else{
-            holder.titleView.setTextColor(holder.defaultColor);
+        if(holder.imageView.getVisibility() == View.GONE) {
+            holder.imageView.setVisibility(View.VISIBLE);
+            Glide.with(mContext).load(thread.getMediaPath())
+                    .fitCenter()
+                    .crossFade()
+                    .into(holder.imageView);
         }
-
-        holder.timeAuthorView.setText(timeAuthor);
     }
 
     private void configureCommentViews(CommentViewHolder holder, int position){
         RedditComment comment = mCommentsList.get(position - 1);
+
         String points = Integer.toString(comment.getScore()) + " points";
         String time = comment.getFormattedTime();
-        String info = comment.getAuthor() + " " + points + " " + time;
-
+        String info = comment.getAuthor() + "   " + points + "   " + time;
         holder.infoView.setText(info);
-        if(!comment.getBodyHtml().isEmpty()) {
-            Spanned spanned = Html.fromHtml(StringEscapeUtils.unescapeHtml4(comment.getBodyHtml()));
+
+        String bodyHtml = comment.getBodyHtml();
+        if(!TextUtils.isEmpty(bodyHtml)) {
+            Spanned spanned = fromHtml(comment.getBodyHtml());
             holder.commentBodyView.setText(trim(spanned, 0, spanned.length()));
         }
 
@@ -190,6 +215,12 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureFooterView(FooterViewHolder holder){
+        if(!mRecentlyLoadedComments.isEmpty()){
+            holder.itemView.setVisibility(View.VISIBLE);
+        }else{
+            holder.itemView.setVisibility(View.GONE);
+        }
+
         holder.btnLoadMore.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -205,10 +236,14 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     public void replaceData(List<RedditComment> newList){
         mCommentsList.clear();
         mCommentsList.addAll(newList);
+        mRecentlyLoadedComments.clear();
+        mRecentlyLoadedComments.addAll(newList);
         notifyDataSetChanged();
     }
 
     public void addData(List<RedditComment> moreComments){
+        mRecentlyLoadedComments.clear();
+        mRecentlyLoadedComments.addAll(moreComments);
         mCommentsList.addAll(moreComments);
         notifyDataSetChanged();
     }

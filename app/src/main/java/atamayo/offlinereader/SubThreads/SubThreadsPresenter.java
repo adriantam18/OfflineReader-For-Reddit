@@ -47,7 +47,7 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
     @Override
     public void openCommentsPage(RedditThread thread) {
         thread.setWasClicked(true);
-        mRepository.addRedditThread(thread);
+        mRepository.updateThread(thread);
         mView.showCommentsPage(thread.getFullName());
     }
 }

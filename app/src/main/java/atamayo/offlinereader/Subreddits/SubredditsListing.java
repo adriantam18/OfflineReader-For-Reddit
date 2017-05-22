@@ -1,6 +1,7 @@
 package atamayo.offlinereader.Subreddits;
 
 import android.graphics.Color;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +20,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -41,7 +41,7 @@ import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereader.RedditDAO.DaoSession;
 import atamayo.offlinereader.SubThreads.SubThreadsListing;
 import atamayo.offlinereader.SubredditService;
-import atamayo.offlinereader.Data.CommentFileManager;
+import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.Utils.RedditDownloader;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -85,7 +85,7 @@ public class SubredditsListing extends Fragment
         setHasOptionsMenu(true);
 
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
-        CommentFileManager commentFileManager = new CommentFileManager(getActivity());
+        FileManager commentFileManager = new FileManager(getActivity());
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), commentFileManager);
         mPresenter = new SubredditsPresenter(repository, this, new RedditDownloader(getActivity()));
         mAdapter = new SubredditsAdapter(new ArrayList<Subreddit>(), this);
@@ -256,6 +256,8 @@ public class SubredditsListing extends Fragment
         Intent intent = new Intent(getActivity(), SubredditService.class);
         intent.putExtra("subreddits", (ArrayList<String>) mAdapter.getSubsToDownload());
         getActivity().startService(intent);
+
+        Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_SHORT).show();
     }
 
     private void showConfirmDialog(String title, String message, String action){

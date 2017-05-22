@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,7 @@ import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditDAO.DaoSession;
-import atamayo.offlinereader.Data.CommentFileManager;
+import atamayo.offlinereader.Data.FileManager;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -40,11 +39,11 @@ public class ThreadCommentsListing extends Fragment
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        CommentFileManager fileManager = new CommentFileManager(getActivity());
+        FileManager fileManager = new FileManager(getActivity());
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), fileManager);
         mPresenter = new ThreadCommentsPresenter(repository, this);
-        mAdapter = new ThreadCommentsAdapter(new ArrayList<RedditComment>(0), this);
+        mAdapter = new ThreadCommentsAdapter(new ArrayList<>(0), this, getActivity());
     }
 
     @Override

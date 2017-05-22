@@ -7,11 +7,18 @@ import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.Index;
 import org.greenrobot.greendao.annotation.Generated;
+import org.greenrobot.greendao.annotation.Transient;
 
 @Entity(
         nameInDb = "REDDIT_THREADS"
 )
 public class RedditThread extends RedditObject {
+    @Transient
+    private static final String MEDIA_PREFIX = "media_";
+
+    @Transient
+    private static final String COMMENT_PREFIX = "comment_";
+
     @Id
     Long id;
 
@@ -65,11 +72,26 @@ public class RedditThread extends RedditObject {
     @Expose
     boolean over18;
 
-    @Generated(hash = 154724876)
-    public RedditThread(Long id, boolean wasClicked, String fullName,
-            String threadId, String subreddit, String title, String author,
-            int score, int ups, int downs, String selftext, String selftextHtml,
-            String permalink, int numComments, long createdUTC, boolean over18) {
+    @Transient
+    @Expose
+    Preview preview;
+
+    @Expose
+    String thumbnail;
+
+    @Transient
+    byte[] imageBytes;
+
+    String mediaPath;
+
+    String commentPath;
+
+    @Generated(hash = 273131024)
+    public RedditThread(Long id, boolean wasClicked, String fullName, String threadId,
+            String subreddit, String title, String author, int score, int ups, int downs,
+            String selftext, String selftextHtml, String permalink, int numComments,
+            long createdUTC, boolean over18, String thumbnail, String mediaPath,
+            String commentPath) {
         this.id = id;
         this.wasClicked = wasClicked;
         this.fullName = fullName;
@@ -86,6 +108,9 @@ public class RedditThread extends RedditObject {
         this.numComments = numComments;
         this.createdUTC = createdUTC;
         this.over18 = over18;
+        this.thumbnail = thumbnail;
+        this.mediaPath = mediaPath;
+        this.commentPath = commentPath;
     }
 
     @Generated(hash = 1439624015)
@@ -257,5 +282,53 @@ public class RedditThread extends RedditObject {
 
     public boolean getOver18() {
         return this.over18;
+    }
+
+    public Preview getPreview() {
+        return preview;
+    }
+
+    public void setPreview(Preview preview) {
+        this.preview = preview;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public byte[] getImageBytes() {
+        return imageBytes;
+    }
+
+    public void setImageBytes(byte[] imageBytes) {
+        this.imageBytes = imageBytes;
+    }
+
+    public String getMediaPath(){
+        return mediaPath;
+    }
+
+    public void setMediaPath(String mediaPath){
+        this.mediaPath = mediaPath;
+    }
+
+    public String getCommentPath(){
+        return commentPath;
+    }
+
+    public void setCommentPath(String commentPath){
+        this.commentPath = commentPath;
+    }
+
+    public String getMediaFileName(){
+        return MEDIA_PREFIX + fullName;
+    }
+
+    public String getCommentFileName(){
+        return COMMENT_PREFIX + fullName;
     }
 }

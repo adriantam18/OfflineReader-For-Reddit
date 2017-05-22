@@ -40,6 +40,9 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         public final static Property NumComments = new Property(13, int.class, "numComments", false, "NUM_COMMENTS");
         public final static Property CreatedUTC = new Property(14, long.class, "createdUTC", false, "CREATED_UTC");
         public final static Property Over18 = new Property(15, boolean.class, "over18", false, "OVER18");
+        public final static Property Thumbnail = new Property(16, String.class, "thumbnail", false, "THUMBNAIL");
+        public final static Property MediaPath = new Property(17, String.class, "mediaPath", false, "MEDIA_PATH");
+        public final static Property CommentPath = new Property(18, String.class, "commentPath", false, "COMMENT_PATH");
     }
 
 
@@ -70,7 +73,10 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
                 "\"PERMALINK\" TEXT," + // 12: permalink
                 "\"NUM_COMMENTS\" INTEGER NOT NULL ," + // 13: numComments
                 "\"CREATED_UTC\" INTEGER NOT NULL ," + // 14: createdUTC
-                "\"OVER18\" INTEGER NOT NULL );"); // 15: over18
+                "\"OVER18\" INTEGER NOT NULL ," + // 15: over18
+                "\"THUMBNAIL\" TEXT," + // 16: thumbnail
+                "\"MEDIA_PATH\" TEXT," + // 17: mediaPath
+                "\"COMMENT_PATH\" TEXT);"); // 18: commentPath
         // Add Indexes
         db.execSQL("CREATE UNIQUE INDEX " + constraint + "IDX_REDDIT_THREADS_FULL_NAME ON REDDIT_THREADS" +
                 " (\"FULL_NAME\" ASC);");
@@ -137,6 +143,21 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         stmt.bindLong(14, entity.getNumComments());
         stmt.bindLong(15, entity.getCreatedUTC());
         stmt.bindLong(16, entity.getOver18() ? 1L: 0L);
+ 
+        String thumbnail = entity.getThumbnail();
+        if (thumbnail != null) {
+            stmt.bindString(17, thumbnail);
+        }
+ 
+        String mediaPath = entity.getMediaPath();
+        if (mediaPath != null) {
+            stmt.bindString(18, mediaPath);
+        }
+ 
+        String commentPath = entity.getCommentPath();
+        if (commentPath != null) {
+            stmt.bindString(19, commentPath);
+        }
     }
 
     @Override
@@ -194,6 +215,21 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         stmt.bindLong(14, entity.getNumComments());
         stmt.bindLong(15, entity.getCreatedUTC());
         stmt.bindLong(16, entity.getOver18() ? 1L: 0L);
+ 
+        String thumbnail = entity.getThumbnail();
+        if (thumbnail != null) {
+            stmt.bindString(17, thumbnail);
+        }
+ 
+        String mediaPath = entity.getMediaPath();
+        if (mediaPath != null) {
+            stmt.bindString(18, mediaPath);
+        }
+ 
+        String commentPath = entity.getCommentPath();
+        if (commentPath != null) {
+            stmt.bindString(19, commentPath);
+        }
     }
 
     @Override
@@ -219,7 +255,10 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
             cursor.isNull(offset + 12) ? null : cursor.getString(offset + 12), // permalink
             cursor.getInt(offset + 13), // numComments
             cursor.getLong(offset + 14), // createdUTC
-            cursor.getShort(offset + 15) != 0 // over18
+            cursor.getShort(offset + 15) != 0, // over18
+            cursor.isNull(offset + 16) ? null : cursor.getString(offset + 16), // thumbnail
+            cursor.isNull(offset + 17) ? null : cursor.getString(offset + 17), // mediaPath
+            cursor.isNull(offset + 18) ? null : cursor.getString(offset + 18) // commentPath
         );
         return entity;
     }
@@ -242,6 +281,9 @@ public class RedditThreadDao extends AbstractDao<RedditThread, Long> {
         entity.setNumComments(cursor.getInt(offset + 13));
         entity.setCreatedUTC(cursor.getLong(offset + 14));
         entity.setOver18(cursor.getShort(offset + 15) != 0);
+        entity.setThumbnail(cursor.isNull(offset + 16) ? null : cursor.getString(offset + 16));
+        entity.setMediaPath(cursor.isNull(offset + 17) ? null : cursor.getString(offset + 17));
+        entity.setCommentPath(cursor.isNull(offset + 18) ? null : cursor.getString(offset + 18));
      }
     
     @Override
