@@ -16,6 +16,7 @@ import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
 public class MainActivity extends AppCompatActivity
     implements SubredditsListing.OnSubredditSelectedListener,
         SubThreadsListing.OnThreadSelectedListener{
+    public static final String FRAGMENT_EXTRA = "extra_fragment";
     private FragmentManager fragmentManager;
 
     @Override
@@ -54,8 +55,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onNewIntent(Intent intent){
-        if(intent.hasExtra("fragment")){
-            String tag = intent.getStringExtra("fragment");
+        super.onNewIntent(intent);
+        if(intent.hasExtra(FRAGMENT_EXTRA)){
+            String tag = intent.getStringExtra(FRAGMENT_EXTRA);
             Fragment fragment = fragmentManager.findFragmentByTag(tag);
 
             if(fragment != null && !fragment.isVisible()){
