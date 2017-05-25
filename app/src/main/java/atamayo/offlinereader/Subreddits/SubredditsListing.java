@@ -254,7 +254,7 @@ public class SubredditsListing extends Fragment
 
     private void startDownloadService(){
         Intent intent = new Intent(getActivity(), SubredditService.class);
-        intent.putExtra("subreddits", (ArrayList<String>) mAdapter.getSubsToDownload());
+        intent.putExtra(SubredditService.EXTRA_SUBREDDIT, (ArrayList<String>) mAdapter.getSubsToDownload());
         getActivity().startService(intent);
 
         Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_SHORT).show();

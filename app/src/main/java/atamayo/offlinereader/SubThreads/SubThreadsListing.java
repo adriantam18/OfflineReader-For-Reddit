@@ -183,7 +183,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
     @Override
     public void startDownloadService(List<String> subreddits){
         Intent intent = new Intent(getActivity(), SubredditService.class);
-        intent.putExtra("subreddits", (ArrayList<String>) subreddits);
+        intent.putExtra(SubredditService.EXTRA_SUBREDDIT, (ArrayList<String>) subreddits);
         getActivity().startService(intent);
 
         Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_SHORT).show();
