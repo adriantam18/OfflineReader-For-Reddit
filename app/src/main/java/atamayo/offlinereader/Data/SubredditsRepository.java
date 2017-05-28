@@ -20,7 +20,6 @@ import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereader.RedditDAO.RedditThreadDao;
 import atamayo.offlinereader.RedditDAO.SubredditDao;
-import io.reactivex.Observable;
 
 /**
  * Implementation of SubredditsDataSource that uses a combination of GreenDao
@@ -106,33 +105,39 @@ public class SubredditsRepository implements SubredditsDataSource {
     @Override
     public List<RedditComment> getCommentsForThread(String threadFullName, int offset, int limit){
         List<RedditComment> comments = new ArrayList<>();
-        Gson gson = new GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(RedditObject.class, new RedditObjectDeserializer())
-                .create();
 
-        String json = mFileManager.loadFile(threadFullName);
-        RedditObject[] objects = gson.fromJson(json, RedditObject[].class);
+        if(offset >= 0 && limit >= 0) {
+            RedditThread thread = getRedditThread(threadFullName);
 
-        if(objects[1] instanceof RedditListing){
-            RedditListing listings = (RedditListing) objects[1];
-            List<RedditObject> commentListings = listings.getChildren();
-            int last = limit + offset;
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .registerTypeAdapter(RedditObject.class, new RedditObjectDeserializer())
+                    .create();
 
-            for(int i = offset; i < last; i++){
-                try {
-                    RedditObject commentListing = commentListings.get(i);
-                    if (commentListing instanceof RedditComment) {
-                        RedditComment comment = (RedditComment) commentListing;
-                        comments.add(comment);
-                        getReplies(comments, comment);
+            String json = mFileManager.loadFile(thread.getCommentFileName());
+            RedditObject[] objects = gson.fromJson(json, RedditObject[].class);
+
+            if (objects[1] instanceof RedditListing) {
+                RedditListing listings = (RedditListing) objects[1];
+                List<RedditObject> commentListings = listings.getChildren();
+                int last = limit + offset;
+
+                for (int i = offset; i < last; i++) {
+                    try {
+                        RedditObject commentListing = commentListings.get(i);
+                        if (commentListing instanceof RedditComment) {
+                            RedditComment comment = (RedditComment) commentListing;
+                            comments.add(comment);
+                            getReplies(comments, comment);
+                        }
+                    } catch (IndexOutOfBoundsException e) {
+                        Log.e("Repo", e.toString());
+                        return comments;
                     }
-                }catch (IndexOutOfBoundsException e){
-                    Log.e("Repo", e.toString());
-                    return comments;
                 }
             }
         }
+
         return comments;
     }
 
@@ -149,11 +154,6 @@ public class SubredditsRepository implements SubredditsDataSource {
                 }
             }
         }
-    }
-
-    @Override
-    public Observable<List<RedditThread>> getThreads(String subredditName){
-        return Observable.just(getRedditThreads(subredditName));
     }
 
     @Override
