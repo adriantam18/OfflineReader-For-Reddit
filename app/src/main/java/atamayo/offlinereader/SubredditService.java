@@ -36,6 +36,7 @@ public class SubredditService extends Service {
     private CompositeDisposable compositeDisposable;
     private int runningTasks;
     private final static int FOREGROUND_ID = 12148;
+    private final static int NOTIF_ID = 12149;
 
     public SubredditService(){
     }
@@ -122,7 +123,7 @@ public class SubredditService extends Service {
                     .setContentText("New threads have been downloaded")
                     .build();
 
-            mNotificationManager.notify(FOREGROUND_ID, notification);
+            mNotificationManager.notify(NOTIF_ID, notification);
             stopSelf();
         }
     }
