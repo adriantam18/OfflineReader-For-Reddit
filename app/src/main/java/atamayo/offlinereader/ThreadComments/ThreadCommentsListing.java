@@ -1,5 +1,6 @@
 package atamayo.offlinereader.ThreadComments;
 
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -28,6 +29,12 @@ public class ThreadCommentsListing extends Fragment
         implements ThreadCommentsContract.View, LoadCommentsCallback {
     public static final String TAG = "ThreadCommentsListing";
     public static final String THREAD_FULL_NAME = "ThreadFullName";
+    private static final String TOP_COMMENTS_IN_VIEW = "TopCommentsInView";
+    private static final String CURRENT_LIST_STATE = "CurrListState";
+    private static final int ITEMS_PER_PAGE = 10;
+    private int mCurrentTopCommentsInView;
+    private boolean fromRestart;
+    private Parcelable mListState;
 
     @BindView(R.id.comments_list) RecyclerView mCommentsList;
     @BindView(R.id.progress_bar) ProgressBar mProgressBar;
@@ -38,7 +45,6 @@ public class ThreadCommentsListing extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-
         FileManager fileManager = new FileManager(getActivity());
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), fileManager);
@@ -58,21 +64,44 @@ public class ThreadCommentsListing extends Fragment
         mCommentsList.setLayoutManager(new LinearLayoutManager(getActivity()));
         mCommentsList.setAdapter(mAdapter);
 
-        mPresenter.initCommentsView(threadFullName);
+        if(savedInstancestate == null) {
+            fromRestart = false;
+            mPresenter.initCommentsView(threadFullName, 0, ITEMS_PER_PAGE);
+            mCurrentTopCommentsInView = 0;
+        }else{
+            fromRestart = true;
+            mListState = savedInstancestate.getParcelable(CURRENT_LIST_STATE);
+            mCurrentTopCommentsInView = savedInstancestate.getInt(TOP_COMMENTS_IN_VIEW, ITEMS_PER_PAGE);
+            mPresenter.initCommentsView(threadFullName, 0,
+                    mCurrentTopCommentsInView);
+        }
 
         return view;
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
     }
 
     @Override
     public void onDestroyView(){
         super.onDestroyView();
         unbinder.unbind();
+        mPresenter.unsubscribe();
     }
 
     @Override
     public void onPause(){
         super.onPause();
-        mPresenter.unsubscribe();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        outState.putInt(TOP_COMMENTS_IN_VIEW, mCurrentTopCommentsInView);
+        outState.putParcelable(CURRENT_LIST_STATE, mCommentsList.getLayoutManager().onSaveInstanceState());
+
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -81,12 +110,25 @@ public class ThreadCommentsListing extends Fragment
     }
 
     @Override
-    public void showComments(List<RedditComment> comments) {
+    public void showInitialComments(List<RedditComment> comments) {
         mAdapter.replaceData(comments);
+
+        if(!comments.isEmpty() && !fromRestart) {
+            mCurrentTopCommentsInView += ITEMS_PER_PAGE;
+        }
+
+        if(fromRestart) {
+            mCommentsList.getLayoutManager().onRestoreInstanceState(mListState);
+            fromRestart = false;
+        }
     }
 
     @Override
     public void showMoreComments(List<RedditComment> comments){
+        if(!comments.isEmpty() && !fromRestart) {
+            mCurrentTopCommentsInView += ITEMS_PER_PAGE;
+        }
+
         mAdapter.addData(comments);
     }
 
@@ -106,6 +148,6 @@ public class ThreadCommentsListing extends Fragment
 
     @Override
     public void loadMore(){
-        mPresenter.getMoreComments();
+        mPresenter.getMoreComments(mCurrentTopCommentsInView, ITEMS_PER_PAGE);
     }
 }

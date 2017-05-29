@@ -1,8 +1,6 @@
 package atamayo.offlinereader.ThreadComments;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
@@ -18,14 +16,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.CenterCrop;
-import com.bumptech.glide.load.resource.gif.GifDrawableTransformation;
-import com.bumptech.glide.request.target.GlideDrawableImageViewTarget;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.xml.sax.XMLReader;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +36,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     private List<RedditComment> mCommentsList;
     private List<RedditComment> mRecentlyLoadedComments;
     private LoadCommentsCallback mCallback;
-    private RedditThread thread;
+    private RedditThread mThread;
     private static final int VIEW_HEADER = R.layout.comments_header;
     private static final int VIEW_FOOTER = R.layout.comments_footer;
     private static final int VIEW_ITEM = R.layout.comments_list_item;
@@ -119,7 +113,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
                 break;
             case VIEW_ITEM:
                 CommentViewHolder commentViewHolder = (CommentViewHolder) holder;
-                configureCommentViews(commentViewHolder, position);
+                configureCommentViews(commentViewHolder, position - 1);
                 break;
             case VIEW_FOOTER:
                 FooterViewHolder footerViewHolder = (FooterViewHolder) holder;
@@ -132,7 +126,9 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public int getItemCount() {
-        return mCommentsList.size() + 1;
+        //We added a header and a footer so we have 2 extra items aside
+        //from our comments list
+        return mCommentsList.size() + 2;
     }
 
     @Override
@@ -144,7 +140,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     public int getItemViewType(int position){
         if(position == 0){
             return VIEW_HEADER;
-        }else if(position == mCommentsList.size()){
+        }else if(position == mCommentsList.size() + 1){
             return VIEW_FOOTER;
         }else {
             return VIEW_ITEM;
@@ -152,17 +148,13 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureHeaderView(ThreadViewHolder holder){
-        holder.titleView.setText(thread.getTitle());
-        if(thread.getWasClicked()){
-            holder.titleView.setTextColor(holder.clickedColor);
-        }else{
-            holder.titleView.setTextColor(holder.defaultColor);
-        }
+        holder.titleView.setText(mThread.getTitle());
+        holder.titleView.setTextColor(holder.clickedColor);
 
-        String timeAuthor = thread.getFormattedTime() + " by " + thread.getAuthor();
+        String timeAuthor = mThread.getFormattedTime() + " by " + mThread.getAuthor();
         holder.timeAuthorView.setText(timeAuthor);
 
-        String selftextHtml = thread.getSelftextHtml();
+        String selftextHtml = mThread.getSelftextHtml();
         if(TextUtils.isEmpty(selftextHtml)){
             holder.selftextView.setVisibility(View.GONE);
         }else{
@@ -173,7 +165,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
         if(holder.imageView.getVisibility() == View.GONE) {
             holder.imageView.setVisibility(View.VISIBLE);
-            Glide.with(mContext).load(thread.getMediaPath())
+            Glide.with(mContext).load(mThread.getMediaPath())
                     .fitCenter()
                     .crossFade()
                     .into(holder.imageView);
@@ -181,7 +173,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureCommentViews(CommentViewHolder holder, int position){
-        RedditComment comment = mCommentsList.get(position - 1);
+        RedditComment comment = mCommentsList.get(position);
 
         String points = Integer.toString(comment.getScore()) + " points";
         String time = comment.getFormattedTime();
@@ -192,6 +184,8 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         if(!TextUtils.isEmpty(bodyHtml)) {
             Spanned spanned = fromHtml(comment.getBodyHtml());
             holder.commentBodyView.setText(trim(spanned, 0, spanned.length()));
+        }else{
+            holder.commentBodyView.setText(bodyHtml);
         }
 
         if (position == getItemCount()) {
@@ -230,7 +224,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public void addThread(RedditThread thread){
-        this.thread = thread;
+        this.mThread = thread;
     }
 
     public void replaceData(List<RedditComment> newList){
