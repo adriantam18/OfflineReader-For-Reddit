@@ -1,33 +1,40 @@
 package atamayo.offlinereader.SubThreads;
 
-import android.os.Build;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.util.List;
 
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
+import atamayo.offlinereader.ThreadComments.LoadCommentsCallback;
+import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import butterknife.BindColor;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
-public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.ViewHolder>
+public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     implements ItemTouchHelperAdapter{
     private List<RedditThread> mThreadDataList;
     private ThreadListCallbacks mThreadListCallbacks;
+    private OnLoadMoreItems mLoadMoreCallback;
+    private int numRecentlyLoaded;
+    private static final int VIEW_ITEM = R.layout.sub_threads_list_item;
+    private static final int VIEW_FOOTER = R.layout.thread_footer;
 
-    public SubThreadsAdapter(List<RedditThread> threadDataList, ThreadListCallbacks callbacks){
+    public SubThreadsAdapter(List<RedditThread> threadDataList, ThreadListCallbacks callbacks, OnLoadMoreItems loadMoreItemsCallback){
         mThreadDataList = threadDataList;
         mThreadListCallbacks = callbacks;
+        mLoadMoreCallback = loadMoreItemsCallback;
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    public class ThreadViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         @BindView(R.id.thread_card) CardView cardView;
         @BindView(R.id.score) TextView scoreView;
         @BindView(R.id.thread_title) TextView titleView;
@@ -36,7 +43,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         @BindColor(R.color.thread_title_color) int defaultColor;
         @BindColor(R.color.thread_title_clicked_color) int clickedColor;
 
-        public ViewHolder(View view){
+        public ThreadViewHolder(View view){
             super(view);
 
             ButterKnife.bind(this, view);
@@ -49,46 +56,68 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         }
     }
 
-    @Override
+    public class FooterViewHolder extends RecyclerView.ViewHolder{
+        @BindView(R.id.btn_load_more_threads) ImageButton btnLoadMore;
+
+        public FooterViewHolder(View view){
+            super(view);
+
+            ButterKnife.bind(this, view);
+        }
+
+        @OnClick(R.id.btn_load_more_threads)
+        public void onLoadMoreClicked(View view){
+            mLoadMoreCallback.loadMore();
+        }
+    }
+
     public void onItemDismiss(int position){
         mThreadListCallbacks.OnDeleteThread(mThreadDataList.get(position));
     }
 
     @Override
-    public SubThreadsAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.sub_threads_list_item, parent, false);
-        return new ViewHolder(itemView);
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView;
+
+        if(viewType == VIEW_ITEM) {
+            itemView = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.sub_threads_list_item, parent, false);
+            return new ThreadViewHolder(itemView);
+        }else{
+            itemView = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.thread_footer, parent, false);
+            return new FooterViewHolder(itemView);
+        }
     }
 
     @Override
-    public void onBindViewHolder(SubThreadsAdapter.ViewHolder holder, int position) {
-        final RedditThread threadData = mThreadDataList.get(position);
-
-        String authorAndTime = threadData.getAuthor() + " \u2022 " + threadData.getFormattedTime();
-        String numComments = String.valueOf(threadData.getNumComments()) + " comments";
-        String score;
-        if(threadData.getScore() >= 10000){
-            score = String.valueOf(threadData.getScore() / 1000) + "k";
-        }else{
-            score = String.valueOf(threadData.getScore());
-        }
-
-        holder.scoreView.setText(score);
-        holder.titleView.setText(threadData.getTitle());
-        holder.numCommentsView.setText(numComments);
-        holder.authorView.setText(authorAndTime);
-
-        if(threadData.getWasClicked()){
-            holder.titleView.setTextColor(holder.clickedColor);
-        }else {
-            holder.titleView.setTextColor(holder.defaultColor);
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        switch (holder.getItemViewType()){
+            case VIEW_ITEM:
+                ThreadViewHolder threadViewHolder = (ThreadViewHolder) holder;
+                configureItemView(threadViewHolder, position);
+                break;
+            case VIEW_FOOTER:
+                FooterViewHolder footerViewHolder = (FooterViewHolder) holder;
+                configureFooterView(footerViewHolder);
+                break;
+            default:
+                break;
         }
     }
 
     @Override
     public int getItemCount() {
-        return mThreadDataList.size();
+        return mThreadDataList.size() + 1;
+    }
+
+    @Override
+    public int getItemViewType(int position){
+        if(position == mThreadDataList.size()){
+            return VIEW_FOOTER;
+        }else{
+            return VIEW_ITEM;
+        }
     }
 
     @Override
@@ -96,9 +125,50 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<SubThreadsAdapter.Vi
         super.onAttachedToRecyclerView(recyclerView);
     }
 
+    private void configureItemView(ThreadViewHolder holder, int position){
+        if(!mThreadDataList.isEmpty()) {
+            final RedditThread threadData = mThreadDataList.get(position);
+
+            String authorAndTime = threadData.getAuthor() + " \u2022 " + threadData.getFormattedTime();
+            String numComments = String.valueOf(threadData.getNumComments()) + " comments";
+            String score;
+            if (threadData.getScore() >= 10000) {
+                score = String.valueOf(threadData.getScore() / 1000) + "k";
+            } else {
+                score = String.valueOf(threadData.getScore());
+            }
+
+            holder.scoreView.setText(score);
+            holder.titleView.setText(threadData.getTitle());
+            holder.numCommentsView.setText(numComments);
+            holder.authorView.setText(authorAndTime);
+
+            if (threadData.getWasClicked()) {
+                holder.titleView.setTextColor(holder.clickedColor);
+            } else {
+                holder.titleView.setTextColor(holder.defaultColor);
+            }
+        }
+    }
+
+    private void configureFooterView(FooterViewHolder holder){
+        if(numRecentlyLoaded > 0){
+            holder.btnLoadMore.setVisibility(View.VISIBLE);
+        }else{
+            holder.btnLoadMore.setVisibility(View.GONE);
+        }
+    }
+
     public void replaceData(List<RedditThread> newList){
+        numRecentlyLoaded = newList.size();
         mThreadDataList.clear();
         mThreadDataList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
+    public void addData(List<RedditThread> threads){
+        numRecentlyLoaded = threads.size();
+        mThreadDataList.addAll(threads);
         notifyDataSetChanged();
     }
 }

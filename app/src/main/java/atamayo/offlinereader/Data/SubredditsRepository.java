@@ -88,11 +88,17 @@ public class SubredditsRepository implements SubredditsDataSource {
     }
 
     @Override
-    public List<RedditThread> getRedditThreads(String subredditName) {
-        return mThreadDao.queryBuilder()
+    public List<RedditThread> getRedditThreads(String subredditName, int offset, int limit) {
+        if(offset >= 0 && limit >= 0) {
+            return mThreadDao.queryBuilder()
                     .where(RedditThreadDao.Properties.Subreddit.eq(subredditName))
                     .orderDesc(RedditThreadDao.Properties.Id)
+                    .offset(offset)
+                    .limit(limit)
                     .list();
+        }else{
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -177,7 +183,11 @@ public class SubredditsRepository implements SubredditsDataSource {
 
     @Override
     public void deleteAllThreadsFromSubreddit(String subredditName) {
-        List<RedditThread> threads = getRedditThreads(subredditName);
+        List<RedditThread> threads = mThreadDao.queryBuilder()
+                .where(RedditThreadDao.Properties.Subreddit.eq(subredditName))
+                .orderDesc(RedditThreadDao.Properties.Id)
+                .list();
+
         for(RedditThread thread : threads){
             deleteAllCommentsFromThread(thread.getFullName());
             mFileManager.deleteFile(thread.getMediaFileName());

@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">OfflineReader For Reddit</string>
 
+    <!--THREADS-->
+    <string name="no_more_threads">No more threads to show</string>
+
     <!--KEYWORDS-->
     <string name="keyword_input_hint">Enter Keyword</string>
 

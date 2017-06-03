@@ -14,7 +14,7 @@ public interface SubredditsDataSource {
     void updateThread(RedditThread thread);
 
     List<Subreddit> getSubreddits();
-    List<RedditThread> getRedditThreads(String subredditName);
+    List<RedditThread> getRedditThreads(String subredditName, int offset, int limit);
     RedditThread getRedditThread(String fullName);
     List<RedditComment> getCommentsForThread(String threadFullName, int offset, int limit);
 

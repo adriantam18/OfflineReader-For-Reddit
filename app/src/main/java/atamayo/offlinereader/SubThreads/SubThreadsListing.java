@@ -1,5 +1,6 @@
 package atamayo.offlinereader.SubThreads;
 
+import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.content.Context;
@@ -34,18 +35,27 @@ import atamayo.offlinereader.RedditDAO.DaoSession;
 import atamayo.offlinereader.SubredditService;
 import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
+import atamayo.offlinereader.ThreadComments.LoadCommentsCallback;
+import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class SubThreadsListing extends Fragment implements SubThreadsContract.View, ThreadListCallbacks {
+public class SubThreadsListing extends Fragment
+        implements SubThreadsContract.View, ThreadListCallbacks,
+        OnLoadMoreItems {
 
     public static final String TAG = "SubThreadsListing";
-    public static final String SUBREDDIT = "subreddit";
+    public static final String SUBREDDIT = "Subreddit";
+    private static final String LIST_STATE = "Liststate";
+    private static final String THREADS_IN_VIEW = "ThreadsInView";
+    private static final int ITEMS_PER_PAGE = 2;
     private Unbinder unbinder;
     private SubThreadsAdapter mAdapter;
     private SubThreadsContract.Presenter mPresenter;
-    private OnThreadSelectedListener mCallback;
+    private OnThreadSelectedListener onThreadSelectedListener;
+    private Parcelable mListState;
+    private int mCurrentThreadsInView;
 
     @BindView(R.id.sub_threads_list) RecyclerView mSubThreadsList;
     @BindView(R.id.error_msg) TextView mErrorMessage;
@@ -62,7 +72,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         super.onAttach(context);
 
         try {
-            mCallback = (OnThreadSelectedListener) context;
+            onThreadSelectedListener = (OnThreadSelectedListener) context;
         } catch (ClassCastException e) {
             Log.e(TAG, e.toString());
         }
@@ -77,7 +87,8 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         FileManager commentFileManager = new FileManager(getActivity());
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), commentFileManager);
         mPresenter = new SubThreadsPresenter(repository, this);
-        mAdapter = new SubThreadsAdapter(new ArrayList<RedditThread>(), this);
+        mAdapter = new SubThreadsAdapter(new ArrayList<RedditThread>(), this, this);
+        mCurrentThreadsInView = 0;
     }
 
     @Override
@@ -101,21 +112,36 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
         itemTouchHelper.attachToRecyclerView(mSubThreadsList);
 
-        mPresenter.initSubThreadsList(subreddit);
+        mRefresh.setOnRefreshListener(() -> mPresenter.initSubThreadsList(subreddit, 0, mCurrentThreadsInView));
 
-        mRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                mPresenter.initSubThreadsList(subreddit);
-            }
-        });
+        if(savedInstanceState == null) {
+            mPresenter.initSubThreadsList(subreddit, 0, ITEMS_PER_PAGE);
+        }else{
+            mListState = savedInstanceState.getParcelable(LIST_STATE);
+            mPresenter.initSubThreadsList(subreddit, 0, savedInstanceState.getInt(THREADS_IN_VIEW));
+        }
 
         return view;
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+        mPresenter.subscribe(this);
+    }
+
+    @Override
     public void onPause(){
         super.onPause();
+        mPresenter.unsubscribe();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+        outState.putParcelable(LIST_STATE, mSubThreadsList.getLayoutManager().onSaveInstanceState());
+        outState.putInt(THREADS_IN_VIEW, mCurrentThreadsInView);
+
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -152,16 +178,29 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
 
     @Override
     public void showInitialThreads(List<RedditThread> threads) {
+        mRefresh.setRefreshing(false);
+
         if(!threads.isEmpty()) {
             mAdapter.replaceData(threads);
 
             mSubThreadsList.setVisibility(View.VISIBLE);
             mErrorMessage.setVisibility(View.GONE);
+
+            if(mListState != null){
+                mSubThreadsList.getLayoutManager().onRestoreInstanceState(mListState);
+                mListState = null;
+            }
         }else{
             showEmptyThreads();
         }
 
-        mRefresh.setRefreshing(false);
+        mCurrentThreadsInView = threads.size();
+    }
+
+    @Override
+    public void showMoreThreads(List<RedditThread> threads){
+        mAdapter.addData(threads);
+        mCurrentThreadsInView += threads.size();
     }
 
     @Override
@@ -177,7 +216,7 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
         Bundle args = new Bundle();
         args.putString(ThreadCommentsListing.THREAD_FULL_NAME, threadFullName);
 
-        mCallback.launchCommentsPage(args);
+        onThreadSelectedListener.launchCommentsPage(args);
     }
 
     @Override
@@ -202,5 +241,10 @@ public class SubThreadsListing extends Fragment implements SubThreadsContract.Vi
     @Override
     public void OnDeleteThread(RedditThread thread){
         mPresenter.removeThread(thread);
+    }
+
+    @Override
+    public void loadMore(){
+        mPresenter.getMoreThreads(mCurrentThreadsInView, ITEMS_PER_PAGE);
     }
 }
