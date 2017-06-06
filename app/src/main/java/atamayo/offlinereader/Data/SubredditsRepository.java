@@ -81,6 +81,13 @@ public class SubredditsRepository implements SubredditsDataSource {
     }
 
     @Override
+    public Subreddit getSubreddit(String displayName){
+        return mSubsDao.queryBuilder()
+                .where(SubredditDao.Properties.DisplayName.eq(displayName))
+                .unique();
+    }
+
+    @Override
     public List<Subreddit> getSubreddits() {
         return mSubsDao.queryBuilder()
                 .orderDesc(SubredditDao.Properties.Id)

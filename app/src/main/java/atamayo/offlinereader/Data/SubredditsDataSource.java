@@ -13,9 +13,10 @@ public interface SubredditsDataSource {
 
     void updateThread(RedditThread thread);
 
+    Subreddit getSubreddit(String displayName);
     List<Subreddit> getSubreddits();
-    List<RedditThread> getRedditThreads(String subredditName, int offset, int limit);
     RedditThread getRedditThread(String fullName);
+    List<RedditThread> getRedditThreads(String subredditName, int offset, int limit);
     List<RedditComment> getCommentsForThread(String threadFullName, int offset, int limit);
 
     void deleteAllSubreddits();
