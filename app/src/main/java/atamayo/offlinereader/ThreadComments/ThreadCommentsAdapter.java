@@ -20,32 +20,33 @@ import com.bumptech.glide.Glide;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.xml.sax.XMLReader;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
+import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import butterknife.BindArray;
 import butterknife.BindColor;
 import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<RedditComment> mCommentsList;
-    private List<RedditComment> mRecentlyLoadedComments;
-    private LoadCommentsCallback mCallback;
+    private int numRecentlyLoaded;
+    private OnLoadMoreItems mLoadMoreCallback;
     private RedditThread mThread;
     private static final int VIEW_HEADER = R.layout.comments_header;
     private static final int VIEW_FOOTER = R.layout.comments_footer;
     private static final int VIEW_ITEM = R.layout.comments_list_item;
     private Context mContext;
 
-    public ThreadCommentsAdapter(List<RedditComment> comments, LoadCommentsCallback callback, Context context){
+    public ThreadCommentsAdapter(List<RedditComment> comments, OnLoadMoreItems callback, Context context){
         mCommentsList = comments;
-        mRecentlyLoadedComments = new ArrayList<>();
-        mCallback = callback;
+        numRecentlyLoaded = 0;
+        mLoadMoreCallback = callback;
         mContext = context;
     }
 
@@ -80,12 +81,17 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public class FooterViewHolder extends RecyclerView.ViewHolder{
-        @Nullable @BindView(R.id.btn_load_more) Button btnLoadMore;
+        @Nullable @BindView(R.id.btn_load_more_comments) Button btnLoadMore;
 
         public FooterViewHolder(View view){
             super(view);
 
             ButterKnife.bind(this, view);
+        }
+
+        @OnClick(R.id.btn_load_more_comments)
+        public void onLoadMoreClicked(View view){
+            mLoadMoreCallback.loadMore();
         }
     }
 
@@ -148,27 +154,29 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureHeaderView(ThreadViewHolder holder){
-        holder.titleView.setText(mThread.getTitle());
-        holder.titleView.setTextColor(holder.clickedColor);
+        if(mThread != null) {
+            holder.titleView.setText(mThread.getTitle());
+            holder.titleView.setTextColor(holder.clickedColor);
 
-        String timeAuthor = mThread.getFormattedTime() + " by " + mThread.getAuthor();
-        holder.timeAuthorView.setText(timeAuthor);
+            String timeAuthor = mThread.getFormattedTime() + " by " + mThread.getAuthor();
+            holder.timeAuthorView.setText(timeAuthor);
 
-        String selftextHtml = mThread.getSelftextHtml();
-        if(TextUtils.isEmpty(selftextHtml)){
-            holder.selftextView.setVisibility(View.GONE);
-        }else{
-            holder.selftextView.setVisibility(View.VISIBLE);
-            Spanned html = fromHtml(selftextHtml);
-            holder.selftextView.setText(trim(html, 0, html.length()));
-        }
+            String selftextHtml = mThread.getSelftextHtml();
+            if (TextUtils.isEmpty(selftextHtml)) {
+                holder.selftextView.setVisibility(View.GONE);
+            } else {
+                holder.selftextView.setVisibility(View.VISIBLE);
+                Spanned html = fromHtml(selftextHtml);
+                holder.selftextView.setText(trim(html, 0, html.length()));
+            }
 
-        if(holder.imageView.getVisibility() == View.GONE) {
-            holder.imageView.setVisibility(View.VISIBLE);
-            Glide.with(mContext).load(mThread.getMediaPath())
-                    .fitCenter()
-                    .crossFade()
-                    .into(holder.imageView);
+            if (holder.imageView.getVisibility() == View.GONE) {
+                holder.imageView.setVisibility(View.VISIBLE);
+                Glide.with(mContext).load(mThread.getMediaPath())
+                        .fitCenter()
+                        .crossFade()
+                        .into(holder.imageView);
+            }
         }
     }
 
@@ -177,7 +185,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
         String points = Integer.toString(comment.getScore()) + " points";
         String time = comment.getFormattedTime();
-        String info = comment.getAuthor() + "   " + points + "   " + time;
+        String info = comment.getAuthor() + " \u2022 " + points + " \u2022 " + time;
         holder.infoView.setText(info);
 
         String bodyHtml = comment.getBodyHtml();
@@ -209,35 +217,26 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureFooterView(FooterViewHolder holder){
-        if(!mRecentlyLoadedComments.isEmpty()){
-            holder.itemView.setVisibility(View.VISIBLE);
+        if(numRecentlyLoaded > 0){
+            holder.btnLoadMore.setVisibility(View.VISIBLE);
         }else{
-            holder.itemView.setVisibility(View.GONE);
+            holder.btnLoadMore.setVisibility(View.GONE);
         }
-
-        holder.btnLoadMore.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mCallback.loadMore();
-            }
-        });
     }
 
     public void addThread(RedditThread thread){
-        this.mThread = thread;
+        mThread = thread;
     }
 
     public void replaceData(List<RedditComment> newList){
+        numRecentlyLoaded = newList.size();
         mCommentsList.clear();
         mCommentsList.addAll(newList);
-        mRecentlyLoadedComments.clear();
-        mRecentlyLoadedComments.addAll(newList);
         notifyDataSetChanged();
     }
 
     public void addData(List<RedditComment> moreComments){
-        mRecentlyLoadedComments.clear();
-        mRecentlyLoadedComments.addAll(moreComments);
+        numRecentlyLoaded = moreComments.size();
         mCommentsList.addAll(moreComments);
         notifyDataSetChanged();
     }
