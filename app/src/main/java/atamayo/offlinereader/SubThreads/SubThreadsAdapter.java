@@ -1,5 +1,6 @@
 package atamayo.offlinereader.SubThreads;
 
+import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -12,7 +13,6 @@ import java.util.List;
 
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
-import atamayo.offlinereader.ThreadComments.LoadCommentsCallback;
 import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import butterknife.BindColor;
 import butterknife.BindView;
@@ -24,22 +24,23 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private List<RedditThread> mThreadDataList;
     private ThreadListCallbacks mThreadListCallbacks;
     private OnLoadMoreItems mLoadMoreCallback;
-    private int numRecentlyLoaded;
+    private int mNumRecentlyLoaded;
     private static final int VIEW_ITEM = R.layout.sub_threads_list_item;
     private static final int VIEW_FOOTER = R.layout.thread_footer;
 
-    public SubThreadsAdapter(List<RedditThread> threadDataList, ThreadListCallbacks callbacks, OnLoadMoreItems loadMoreItemsCallback){
+    public SubThreadsAdapter(List<RedditThread> threadDataList, ThreadListCallbacks callbacks,
+                             OnLoadMoreItems loadMoreItemsCallback){
         mThreadDataList = threadDataList;
         mThreadListCallbacks = callbacks;
         mLoadMoreCallback = loadMoreItemsCallback;
     }
 
     public class ThreadViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
-        @BindView(R.id.thread_card) CardView cardView;
-        @BindView(R.id.score) TextView scoreView;
-        @BindView(R.id.thread_title) TextView titleView;
-        @BindView(R.id.num_comments) TextView numCommentsView;
-        @BindView(R.id.author_and_time) TextView authorView;
+        @Nullable @BindView(R.id.thread_card) CardView cardView;
+        @Nullable @BindView(R.id.score) TextView scoreView;
+        @Nullable @BindView(R.id.thread_title) TextView titleView;
+        @Nullable @BindView(R.id.num_comments) TextView numCommentsView;
+        @Nullable @BindView(R.id.author_and_time) TextView authorView;
         @BindColor(R.color.thread_title_color) int defaultColor;
         @BindColor(R.color.thread_title_clicked_color) int clickedColor;
 
@@ -125,8 +126,8 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         super.onAttachedToRecyclerView(recyclerView);
     }
 
-    private void configureItemView(ThreadViewHolder holder, int position){
-        if(!mThreadDataList.isEmpty()) {
+    private void configureItemView(ThreadViewHolder holder, int position) {
+        if (!mThreadDataList.isEmpty()) {
             final RedditThread threadData = mThreadDataList.get(position);
 
             String authorAndTime = threadData.getAuthor() + " \u2022 " + threadData.getFormattedTime();
@@ -152,7 +153,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     private void configureFooterView(FooterViewHolder holder){
-        if(numRecentlyLoaded > 0){
+        if(mNumRecentlyLoaded > 0){
             holder.btnLoadMore.setVisibility(View.VISIBLE);
         }else{
             holder.btnLoadMore.setVisibility(View.GONE);
@@ -160,14 +161,14 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     public void replaceData(List<RedditThread> newList){
-        numRecentlyLoaded = newList.size();
+        mNumRecentlyLoaded = newList.size();
         mThreadDataList.clear();
         mThreadDataList.addAll(newList);
         notifyDataSetChanged();
     }
 
     public void addData(List<RedditThread> threads){
-        numRecentlyLoaded = threads.size();
+        mNumRecentlyLoaded = threads.size();
         mThreadDataList.addAll(threads);
         notifyDataSetChanged();
     }

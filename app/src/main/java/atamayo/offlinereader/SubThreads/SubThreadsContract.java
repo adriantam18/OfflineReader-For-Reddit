@@ -17,7 +17,7 @@ public interface SubThreadsContract {
     }
 
     interface Presenter extends BasePresenter<SubThreadsContract.View>{
-        void initSubThreadsList(String subreddit, int offset, int limi);
+        void initSubThreadsList(String subreddit, int offset, int limit);
         void getMoreThreads(int offset, int limit);
         void removeThread(RedditThread thread);
         void removeAllThreads();

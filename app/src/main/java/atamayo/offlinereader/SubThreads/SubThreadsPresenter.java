@@ -6,13 +6,14 @@ import java.util.List;
 
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
+import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class SubThreadsPresenter implements SubThreadsContract.Presenter {
-    private String mSubreddit;
+    private Subreddit mSubreddit;
     private SubredditsDataSource mRepository;
     private SubThreadsContract.View mView;
     private CompositeDisposable mDisposables;
@@ -27,7 +28,7 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
 
     @Override
     public void initSubThreadsList(String subreddit, int offset, int limit) {
-        mSubreddit = subreddit;
+        mSubreddit = mRepository.getSubreddit(subreddit);
         getThreads(false, offset, limit);
     }
 
@@ -38,7 +39,7 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
 
     private void getThreads(boolean isMore, int offset, int limit){
         Observable<List<RedditThread>> threadsObservable = Observable.fromCallable(() ->
-            mRepository.getRedditThreads(mSubreddit, offset, limit));
+            mRepository.getRedditThreads(mSubreddit.getDisplayName(), offset, limit));
 
         mDisposables.clear();
         mDisposables.add(threadsObservable
@@ -54,7 +55,11 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
                 mView.showMoreThreads(threads);
                 mItemsShown += threads.size();
             } else {
-                mView.showInitialThreads(threads);
+                if(!threads.isEmpty()) {
+                    mView.showInitialThreads(threads);
+                }else{
+                    mView.showEmptyThreads();
+                }
                 mItemsShown = threads.size();
             }
         }
@@ -77,13 +82,13 @@ public class SubThreadsPresenter implements SubThreadsContract.Presenter {
     @Override
     public void removeAllThreads(){
         mItemsShown = 0;
-        mRepository.deleteAllThreadsFromSubreddit(mSubreddit);
+        mRepository.deleteAllThreadsFromSubreddit(mSubreddit.getDisplayName());
         mView.showEmptyThreads();
     }
 
     @Override
     public void downloadThreads(){
-        mView.startDownloadService(new ArrayList<>(Arrays.asList(mSubreddit)));
+        mView.startDownloadService(new ArrayList<>(Arrays.asList(mSubreddit.getDisplayName())));
     }
 
     @Override
