@@ -71,6 +71,14 @@ public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter
     }
 
     @Override
+    public void subscribe(ThreadCommentsContract.View view){
+        mView = view;
+        if(mDisposables.isDisposed()){
+            mDisposables = new CompositeDisposable();
+        }
+    }
+
+    @Override
     public void unsubscribe(){
         mView = null;
         mDisposables.dispose();
