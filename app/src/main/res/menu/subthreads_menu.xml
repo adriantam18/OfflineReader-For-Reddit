@@ -4,11 +4,11 @@
     <item
         android:id="@+id/action_download"
         android:icon="@drawable/ic_file_download_white_24dp"
-        android:title="Start Download"
+        android:title="@string/menu_label_download"
         app:showAsAction="ifRoom"/>
 
     <item android:id="@+id/action_delete"
-        android:title="Delete All"
+        android:title="@string/menu_label_delete_all"
         app:showAsAction="never"/>
 
 </menu>
