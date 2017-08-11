@@ -6,17 +6,17 @@
     <dimen name="window_default_padding">16dp</dimen>
 
     <!--REDDIT THREADS-->
-    <dimen name="thread_title_text_size">24sp</dimen>
-    <dimen name="thread_score_text_size">24sp</dimen>
+    <dimen name="thread_title_text_size">16sp</dimen>
+    <dimen name="thread_score_text_size">16sp</dimen>
     <dimen name="thread_labels_text_size">14sp</dimen>
     <dimen name="thread_card_padding_top">16dp</dimen>
     <dimen name="thread_card_padding_bottom">24dp</dimen>
     <dimen name="thread_card_padding_start">16dp</dimen>
     <dimen name="thread_card_padding_end">16dp</dimen>
-    <dimen name="card_margin_top">8dp</dimen>
+    <dimen name="card_margin_top">4dp</dimen>
     <dimen name="card_margin_start">8dp</dimen>
     <dimen name="card_margin_end">8dp</dimen>
-    <dimen name="card_margin_bottom">8dp</dimen>
+    <dimen name="card_margin_bottom">4dp</dimen>
     <dimen name="thread_score_margin_end">8dp</dimen>
     <dimen name="thread_title_margin_bottom">8dp</dimen>
 
