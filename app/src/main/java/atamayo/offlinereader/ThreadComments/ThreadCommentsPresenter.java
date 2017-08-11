@@ -1,79 +1,91 @@
 package atamayo.offlinereader.ThreadComments;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import atamayo.offlinereader.Data.*;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
+import atamayo.offlinereader.Utils.Schedulers.BaseScheduler;
 import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.schedulers.Schedulers;
 
+/**
+ * Presenter for UI ({@link ThreadCommentsListing}) that displays comments for
+ * a Reddit thread. It can retrieve both thread content and comments list.
+ */
 public class ThreadCommentsPresenter implements ThreadCommentsContract.Presenter {
-    private ThreadCommentsContract.View mView;
-    private SubredditsDataSource mRepository;
     private RedditThread mCurrentThread;
+    private SubredditsDataSource mRepository;
+    private ThreadCommentsContract.View mView;
+    private BaseScheduler mScheduler;
     private CompositeDisposable mDisposables;
 
-    public ThreadCommentsPresenter(SubredditsDataSource dataSource, ThreadCommentsContract.View view){
-        mView = view;
+    public ThreadCommentsPresenter(String threadFullName,
+                                   SubredditsDataSource dataSource,
+                                   ThreadCommentsContract.View view,
+                                   BaseScheduler scheduler){
         mRepository = dataSource;
+        mView = view;
+        mScheduler = scheduler;
         mDisposables = new CompositeDisposable();
-    }
-
-    @Override
-    public void initCommentsView(String threadFullName, int offset, int limit) {
         mCurrentThread = mRepository.getRedditThread(threadFullName);
-        mView.showParentThread(mCurrentThread);
-        getComments(false, offset, limit);
     }
 
     @Override
-    public void getMoreComments(int offset, int limit){
-        getComments(true, offset, limit);
+    public void getParentThread(){
+        if (mCurrentThread != null && mView != null) {
+            mView.showParentThread(mCurrentThread);
+        }
     }
 
-    private void getComments(boolean isMore, int offset, int limit){
+    @Override
+    public void getComments(boolean firstLoad, int offset, int limit) {
         mView.showLoading(true);
+
         Observable<List<RedditComment>> commentObservable =
                 Observable.fromCallable(() -> mRepository.getCommentsForThread(mCurrentThread.getFullName(), offset, limit));
 
-        mDisposables.clear();
         mDisposables.add(commentObservable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(new DisposableObserver<List<RedditComment>>(){
-                    @Override public void onComplete() {
-                    }
-
-                    @Override public void onError(Throwable e) {
-                        if(mView != null){
-                            mView.showInitialComments(new ArrayList<>());
-                            mView.showLoading(false);
-                        }
-                    }
-
-                    @Override public void onNext(List<RedditComment> comments) {
-                        if(mView != null) {
-                            if (isMore) {
-                                mView.showMoreComments(comments);
-                            } else {
-                                mView.showInitialComments(comments);
-                            }
-                            mView.showLoading(false);
-                        }
-                    }
-                })
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(comments -> processComments(comments, firstLoad),
+                throwable -> processError(throwable, firstLoad),
+                this::processComplete)
         );
+    }
+
+    private void processComments(List<RedditComment> comments, boolean firstLoad){
+        if (mView != null) {
+            if (firstLoad) {
+                mView.showInitialComments(comments);
+            } else {
+                mView.showMoreComments(comments);
+            }
+
+            mView.showLoading(false);
+        }
+    }
+
+    private void processError(Throwable e, boolean firstLoad){
+        if (mView != null) {
+            if (firstLoad) {
+                mView.showEmptyComments();
+            }
+
+            mView.showLoading(false);
+        }
+    }
+
+    private void processComplete(){
+        if (mView != null) {
+            mView.showLoading(false);
+        }
     }
 
     @Override
     public void subscribe(ThreadCommentsContract.View view){
         mView = view;
-        if(mDisposables.isDisposed()){
+        if (mDisposables.isDisposed()) {
             mDisposables = new CompositeDisposable();
         }
     }

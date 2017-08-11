@@ -12,11 +12,12 @@ public interface ThreadCommentsContract {
         void showParentThread(RedditThread thread);
         void showInitialComments(List<RedditComment> comments);
         void showMoreComments(List<RedditComment> comments);
+        void showEmptyComments();
         void showLoading(boolean isLoading);
     }
 
     interface Presenter extends BasePresenter<ThreadCommentsContract.View>{
-        void initCommentsView(String threadFullName, int offset, int limit);
-        void getMoreComments(int offset, int limit);
+        void getParentThread();
+        void getComments(boolean firstLoad, int offset, int limit);
     }
 }

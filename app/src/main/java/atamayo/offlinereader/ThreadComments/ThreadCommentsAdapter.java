@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -35,17 +36,18 @@ import butterknife.OnClick;
 
 public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<RedditComment> mCommentsList;
-    private int numRecentlyLoaded;
+    private int mNumRecentlyLoaded;
     private OnLoadMoreItems mLoadMoreCallback;
     private RedditThread mThread;
     private static final int VIEW_HEADER = R.layout.comments_header;
     private static final int VIEW_FOOTER = R.layout.comments_footer;
     private static final int VIEW_ITEM = R.layout.comments_list_item;
     private Context mContext;
+    private boolean shouldShowLoading;
 
     public ThreadCommentsAdapter(List<RedditComment> comments, OnLoadMoreItems callback, Context context){
         mCommentsList = comments;
-        numRecentlyLoaded = 0;
+        mNumRecentlyLoaded = 0;
         mLoadMoreCallback = callback;
         mContext = context;
     }
@@ -82,6 +84,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
     public class FooterViewHolder extends RecyclerView.ViewHolder{
         @Nullable @BindView(R.id.btn_load_more_comments) Button btnLoadMore;
+        @Nullable @BindView(R.id.progress_bar) ProgressBar progressBar;
 
         public FooterViewHolder(View view){
             super(view);
@@ -98,21 +101,22 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView;
-        if(viewType == VIEW_HEADER){
-            itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_HEADER, parent, false);
-            return new ThreadViewHolder(itemView);
-        }else if(viewType == VIEW_FOOTER){
-            itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_FOOTER, parent, false);
-            return new FooterViewHolder(itemView);
-        }else{
-            itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_ITEM, parent, false);
-            return new CommentViewHolder(itemView);
+        switch (viewType) {
+            case VIEW_HEADER:
+                itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_HEADER, parent, false);
+                return new ThreadViewHolder(itemView);
+            case VIEW_FOOTER:
+                itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_FOOTER, parent, false);
+                return new FooterViewHolder(itemView);
+            default:
+                itemView = LayoutInflater.from(parent.getContext()).inflate(VIEW_ITEM, parent, false);
+                return new CommentViewHolder(itemView);
         }
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        switch (holder.getItemViewType()){
+        switch (holder.getItemViewType()) {
             case VIEW_HEADER:
                 ThreadViewHolder threadViewHolder = (ThreadViewHolder) holder;
                 configureHeaderView(threadViewHolder);
@@ -144,17 +148,17 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public int getItemViewType(int position){
-        if(position == 0){
+        if (position == 0) {
             return VIEW_HEADER;
-        }else if(position == mCommentsList.size() + 1){
+        } else if (position == mCommentsList.size() + 1) {
             return VIEW_FOOTER;
-        }else {
+        } else {
             return VIEW_ITEM;
         }
     }
 
     private void configureHeaderView(ThreadViewHolder holder){
-        if(mThread != null) {
+        if (mThread != null) {
             holder.titleView.setText(mThread.getTitle());
             holder.titleView.setTextColor(holder.clickedColor);
 
@@ -189,10 +193,10 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         holder.infoView.setText(info);
 
         String bodyHtml = comment.getBodyHtml();
-        if(!TextUtils.isEmpty(bodyHtml)) {
+        if (!TextUtils.isEmpty(bodyHtml)) {
             Spanned spanned = fromHtml(comment.getBodyHtml());
             holder.commentBodyView.setText(trim(spanned, 0, spanned.length()));
-        }else{
+        } else {
             holder.commentBodyView.setText(bodyHtml);
         }
 
@@ -202,14 +206,14 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
             holder.divider.setVisibility(View.VISIBLE);
         }
 
+        int paddingStart = 0;
         if (comment.getDepth() > 0) {
             holder.depthMarker.setVisibility(View.VISIBLE);
-            int paddingStart = Math.round(holder.depthMarkerWidth) * (comment.getDepth() - 1);
-            holder.itemView.setPadding(paddingStart, 0, 0, 0);
+            paddingStart = Math.round(holder.depthMarkerWidth) * (comment.getDepth() - 1);
         } else {
-            holder.itemView.setPadding(0, 0, 0, 0);
             holder.depthMarker.setVisibility(View.GONE);
         }
+        holder.itemView.setPadding(paddingStart, 0, 0, 0);
 
         int colorIndex = comment.getDepth() % holder.colors.length;
         int depthMarkerColor = holder.colors[colorIndex];
@@ -217,10 +221,17 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private void configureFooterView(FooterViewHolder holder){
-        if(numRecentlyLoaded > 0){
-            holder.btnLoadMore.setVisibility(View.VISIBLE);
-        }else{
+        if (shouldShowLoading) {
+            holder.progressBar.setVisibility(View.VISIBLE);
             holder.btnLoadMore.setVisibility(View.GONE);
+        } else {
+            holder.progressBar.setVisibility(View.GONE);
+
+            if (mNumRecentlyLoaded > 0) {
+                holder.btnLoadMore.setVisibility(View.VISIBLE);
+            } else {
+                holder.btnLoadMore.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -229,23 +240,28 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public void replaceData(List<RedditComment> newList){
-        numRecentlyLoaded = newList.size();
+        mNumRecentlyLoaded = newList.size();
         mCommentsList.clear();
         mCommentsList.addAll(newList);
-        notifyDataSetChanged();
+        notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
     }
 
     public void addData(List<RedditComment> moreComments){
-        numRecentlyLoaded = moreComments.size();
+        mNumRecentlyLoaded = moreComments.size();
         mCommentsList.addAll(moreComments);
-        notifyDataSetChanged();
+        notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
+    }
+
+    public void showLoading(boolean isLoading){
+        shouldShowLoading = isLoading;
+        notifyItemChanged(mCommentsList.size() + 1);
     }
 
     private Spanned fromHtml(String htmlText){
         String formatted = StringEscapeUtils.unescapeHtml4(htmlText);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return Html.fromHtml(formatted, Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST | Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM);
-        }else{
+        } else {
             return Html.fromHtml(formatted, null, new TagHandler());
         }
     }
@@ -266,11 +282,11 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
 
         @Override
         public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {
-            if(tag.equals("ul") && !opening){
+            if (tag.equals("ul") && !opening) {
                 output.append("\n");
             }
 
-            if(tag.equals("li") && opening){
+            if (tag.equals("li") && opening) {
                 output.append("\n* ");
             }
         }
