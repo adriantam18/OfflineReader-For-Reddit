@@ -12,13 +12,13 @@ public interface SubThreadsContract {
         void showInitialThreads(List<RedditThread> threads);
         void showMoreThreads(List<RedditThread> threads);
         void showEmptyThreads();
+        void showLoading(boolean isLoading);
         void showCommentsPage(String threadFullName);
         void startDownloadService(List<String> subreddit);
     }
 
     interface Presenter extends BasePresenter<SubThreadsContract.View>{
-        void initSubThreadsList(String subreddit, int offset, int limit);
-        void getMoreThreads(int offset, int limit);
+        void getThreads(boolean firstLoad, int offset, int limit);
         void removeThread(RedditThread thread);
         void removeAllThreads();
         void openCommentsPage(RedditThread thread);

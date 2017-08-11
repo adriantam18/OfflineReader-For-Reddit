@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private ThreadListCallbacks mThreadListCallbacks;
     private OnLoadMoreItems mLoadMoreCallback;
     private int mNumRecentlyLoaded;
+    private boolean shouldShowLoading;
     private static final int VIEW_ITEM = R.layout.sub_threads_list_item;
     private static final int VIEW_FOOTER = R.layout.thread_footer;
 
@@ -59,6 +61,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     public class FooterViewHolder extends RecyclerView.ViewHolder{
         @BindView(R.id.btn_load_more_threads) ImageButton btnLoadMore;
+        @BindView(R.id.progress_bar) ProgressBar progressBar;
 
         public FooterViewHolder(View view){
             super(view);
@@ -80,20 +83,21 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView;
 
-        if(viewType == VIEW_ITEM) {
-            itemView = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.sub_threads_list_item, parent, false);
-            return new ThreadViewHolder(itemView);
-        }else{
-            itemView = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.thread_footer, parent, false);
-            return new FooterViewHolder(itemView);
+        switch (viewType) {
+            case VIEW_FOOTER:
+                itemView = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.thread_footer, parent, false);
+                return new FooterViewHolder(itemView);
+            default:
+                itemView = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.sub_threads_list_item, parent, false);
+                return new ThreadViewHolder(itemView);
         }
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        switch (holder.getItemViewType()){
+        switch (holder.getItemViewType()) {
             case VIEW_ITEM:
                 ThreadViewHolder threadViewHolder = (ThreadViewHolder) holder;
                 configureItemView(threadViewHolder, position);
@@ -114,9 +118,9 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     @Override
     public int getItemViewType(int position){
-        if(position == mThreadDataList.size()){
+        if (position == mThreadDataList.size()) {
             return VIEW_FOOTER;
-        }else{
+        } else {
             return VIEW_ITEM;
         }
     }
@@ -153,10 +157,17 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     private void configureFooterView(FooterViewHolder holder){
-        if(mNumRecentlyLoaded > 0){
-            holder.btnLoadMore.setVisibility(View.VISIBLE);
-        }else{
+        if (shouldShowLoading) {
+            holder.progressBar.setVisibility(View.VISIBLE);
             holder.btnLoadMore.setVisibility(View.GONE);
+        } else {
+            holder.progressBar.setVisibility(View.GONE);
+
+            if (mNumRecentlyLoaded > 0) {
+                holder.btnLoadMore.setVisibility(View.VISIBLE);
+            } else {
+                holder.btnLoadMore.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -171,5 +182,14 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         mNumRecentlyLoaded = threads.size();
         mThreadDataList.addAll(threads);
         notifyDataSetChanged();
+    }
+
+    public void showLoading(boolean isLoading){
+        shouldShowLoading = isLoading;
+        notifyItemChanged(mThreadDataList.size());
+    }
+
+    public int getNumberOfThreads(){
+        return mThreadDataList.size();
     }
 }

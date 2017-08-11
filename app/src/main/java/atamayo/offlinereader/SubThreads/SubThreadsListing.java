@@ -36,10 +36,15 @@ import atamayo.offlinereader.SubredditService;
 import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
 import atamayo.offlinereader.Utils.OnLoadMoreItems;
+import atamayo.offlinereader.Utils.Schedulers.AppScheduler;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
+/**
+ * Displays a list of Reddit threads. Clicking on a thread will bring
+ * the user to the comments page for that thread.
+ */
 public class SubThreadsListing extends Fragment
         implements SubThreadsContract.View, ThreadListCallbacks,
         OnLoadMoreItems {
@@ -47,16 +52,14 @@ public class SubThreadsListing extends Fragment
     public static final String TAG = "SubThreadsListing";
     public static final String SUBREDDIT = "Subreddit";
     private static final String LIST_STATE = "Liststate";
-    private static final String THREADS_IN_VIEW = "ThreadsInView";
-    private static final String STATE_BUNDLE = "StateBundle";
+    private static final String NUM_REQUESTED_THREADS = "NumRequestedThreads";
     private static final int ITEMS_PER_PAGE = 10;
     private Unbinder unbinder;
     private SubThreadsAdapter mAdapter;
     private SubThreadsContract.Presenter mPresenter;
     private OnThreadSelectedListener onThreadSelectedListener;
     private Parcelable mListState;
-    private int mCurrentThreadsInView;
-    private Bundle stateToSave;
+    private int mNumRequestedThreads;
 
     @BindView(R.id.sub_threads_list) RecyclerView mSubThreadsList;
     @BindView(R.id.error_msg) TextView mErrorMessage;
@@ -86,17 +89,11 @@ public class SubThreadsListing extends Fragment
 
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         FileManager commentFileManager = new FileManager(getActivity());
-        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(), daoSession.getSubredditDao(), commentFileManager);
-        mPresenter = new SubThreadsPresenter(repository, this);
-        mAdapter = new SubThreadsAdapter(new ArrayList<RedditThread>(), this, this);
-
-        if(savedInstanceState != null){
-            stateToSave = savedInstanceState.getBundle(STATE_BUNDLE);
-            mListState = stateToSave.getParcelable(LIST_STATE);
-            mCurrentThreadsInView = stateToSave.getInt(THREADS_IN_VIEW);
-        }else{
-            mCurrentThreadsInView = 0;
-        }
+        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
+                daoSession.getSubredditDao(), commentFileManager);
+        mPresenter = new SubThreadsPresenter(getArguments().getString(SUBREDDIT, ""), repository,
+                this, new AppScheduler());
+        mAdapter = new SubThreadsAdapter(new ArrayList<>(), this, this);
     }
 
     @Override
@@ -106,7 +103,7 @@ public class SubThreadsListing extends Fragment
         unbinder = ButterKnife.bind(this, view);
 
         Bundle bundle = getArguments();
-        final String subreddit = bundle.getString(SUBREDDIT) != null
+        final String subreddit = (bundle != null && bundle.getString(SUBREDDIT) != null)
                 ? bundle.getString(SUBREDDIT) : "";
 
         ((AppCompatActivity) getActivity()).setSupportActionBar(mToolbar);
@@ -121,15 +118,23 @@ public class SubThreadsListing extends Fragment
         itemTouchHelper.attachToRecyclerView(mSubThreadsList);
 
         mRefresh.setOnRefreshListener(() ->
-            mPresenter.initSubThreadsList(subreddit, 0, ITEMS_PER_PAGE));
+            mPresenter.getThreads(true, 0, ITEMS_PER_PAGE));
 
-        if(savedInstanceState == null) {
-            mPresenter.initSubThreadsList(subreddit, 0, ITEMS_PER_PAGE);
-        }else{
-            mPresenter.initSubThreadsList(subreddit, 0, mCurrentThreadsInView);
+        if (savedInstanceState != null) {
+            mListState = savedInstanceState.getParcelable(LIST_STATE);
+            mNumRequestedThreads = savedInstanceState.getInt(NUM_REQUESTED_THREADS, ITEMS_PER_PAGE);
+        } else {
+            mNumRequestedThreads = ITEMS_PER_PAGE;
         }
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState){
+        super.onViewCreated(view, savedInstanceState);
+
+        mPresenter.getThreads(true, 0, mNumRequestedThreads);
     }
 
     @Override
@@ -141,20 +146,21 @@ public class SubThreadsListing extends Fragment
     @Override
     public void onPause(){
         super.onPause();
+
+        mListState = mSubThreadsList.getLayoutManager().onSaveInstanceState();
         mPresenter.unsubscribe();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState){
-        outState.putBundle(STATE_BUNDLE, (stateToSave != null) ? stateToSave : saveState());
+        outState.putParcelable(LIST_STATE, mListState);
+        outState.putInt(NUM_REQUESTED_THREADS, mAdapter.getNumberOfThreads());
 
         super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onDestroyView(){
-        stateToSave = saveState();
-
         super.onDestroyView();
         unbinder.unbind();
     }
@@ -173,7 +179,7 @@ public class SubThreadsListing extends Fragment
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.action_download:
                 mPresenter.downloadThreads();
                 return true;
@@ -194,18 +200,15 @@ public class SubThreadsListing extends Fragment
         mSubThreadsList.setVisibility(View.VISIBLE);
         mErrorMessage.setVisibility(View.GONE);
 
-        if(mListState != null) {
+        if (mListState != null) {
             mSubThreadsList.getLayoutManager().onRestoreInstanceState(mListState);
             mListState = null;
         }
-
-        mCurrentThreadsInView = threads.size();
     }
 
     @Override
     public void showMoreThreads(List<RedditThread> threads){
         mAdapter.addData(threads);
-        mCurrentThreadsInView += threads.size();
     }
 
     @Override
@@ -214,6 +217,11 @@ public class SubThreadsListing extends Fragment
         mErrorMessage.setVisibility(View.VISIBLE);
         mErrorMessage.setText("No threads to show");
         mRefresh.setRefreshing(false);
+    }
+
+    @Override
+    public void showLoading(boolean isLoading){
+        mAdapter.showLoading(isLoading);
     }
 
     @Override
@@ -250,14 +258,6 @@ public class SubThreadsListing extends Fragment
 
     @Override
     public void loadMore(){
-        mPresenter.getMoreThreads(mCurrentThreadsInView, ITEMS_PER_PAGE);
-    }
-
-    private Bundle saveState(){
-        Bundle bundle = new Bundle();
-        bundle.putParcelable(LIST_STATE, mSubThreadsList.getLayoutManager().onSaveInstanceState());
-        bundle.putInt(THREADS_IN_VIEW, mCurrentThreadsInView);
-
-        return bundle;
+        mPresenter.getThreads(false, mAdapter.getNumberOfThreads(), ITEMS_PER_PAGE);
     }
 }
