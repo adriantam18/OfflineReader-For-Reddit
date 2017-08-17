@@ -1,87 +1,173 @@
 package atamayo.offlinereader.Subreddits;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import atamayo.offlinereader.MVP.BaseRxPresenter;
+import atamayo.offlinereader.Data.KeywordsDataSource;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.RedditAPI.DuplicateSubredditException;
 import atamayo.offlinereader.RedditAPI.InvalidSubredditException;
 import atamayo.offlinereader.RedditAPI.NoConnectionException;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 import atamayo.offlinereader.Utils.RedditDownloader;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.schedulers.Schedulers;
+import atamayo.offlinereader.Utils.Schedulers.BaseScheduler;
+import io.reactivex.Observable;
 
-public class SubredditsPresenter implements SubredditsContract.Presenter{
-    private final static String TAG = "Subreddit Presenter";
-    private SubredditsDataSource mRepository;
-    private SubredditsContract.View mView;
+/**
+ * Presenter for UI ({@link SubredditsListing}) that displays a list of subreddits.
+ */
+public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View>
+        implements SubredditsContract.Presenter {
+    private final static String FAILED_TO_ADD = "Failed to add. Subreddit may not exist";
+    private final static String FAILED_TO_LOAD = "Failed to load subreddits";
+    private SubredditsDataSource mSubredditsRepository;
+    private KeywordsDataSource mKeywordsRepository;
     private RedditDownloader mDownloader;
-    private CompositeDisposable disposables;
+    private BaseScheduler mScheduler;
 
-    public SubredditsPresenter(SubredditsDataSource repository, SubredditsContract.View view, RedditDownloader downloader) {
-        mRepository = repository;
-        mView = view;
+    public SubredditsPresenter(SubredditsDataSource repository, RedditDownloader downloader,
+                               KeywordsDataSource keywords, BaseScheduler scheduler) {
+        mSubredditsRepository = repository;
         mDownloader = downloader;
-        disposables = new CompositeDisposable();
+        mKeywordsRepository = keywords;
+        mScheduler = scheduler;
     }
 
     @Override
-    public void initSubredditsList() {
-        mView.showSubreddits(mRepository.getSubreddits());
+    public void getSubreddits() {
+        getView().showLoading(true);
+
+        mDisposables.add(Observable.fromCallable(() -> mSubredditsRepository.getSubreddits())
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(subreddits -> {
+                            getView().showSubreddits(subreddits);
+                            getView().showLoading(false);
+                        },
+                        throwable -> {
+                            getView().showLoading(false);
+                            getView().showError(FAILED_TO_LOAD);
+                        },
+                        () -> getView().showLoading(false)));
     }
 
     @Override
     public void addIfExists(String subName) {
-        disposables.add(
-            mDownloader.checkSubreddit(subName)
-                    .subscribeOn(Schedulers.io())
-                    .map(subreddit -> mRepository.addSubreddit(subreddit) ? subreddit : null)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(this::processSubreddit,
-                            this::processError,
-                            () -> mView.showLoading(false))
-        );
-    }
+        getView().showLoading(true);
 
-    private void processSubreddit(Subreddit subreddit){
-        mView.showAddedSubreddit(subreddit);
-        mView.showLoading(false);
-    }
-
-    private void processError(Throwable throwable){
-        if(throwable instanceof NoConnectionException
-                || throwable instanceof InvalidSubredditException
-                || throwable instanceof DuplicateSubredditException){
-            mView.showError(throwable.getMessage());
-        }else{
-            mView.showError("Failed to add");
+        if (subName != null) {
+            mDisposables.add(mDownloader.checkSubreddit(subName)
+                    .subscribeOn(mScheduler.io())
+                    .map(subreddit -> mSubredditsRepository.addSubreddit(subreddit) ? subreddit : null)
+                    .observeOn(mScheduler.mainThread())
+                    .subscribe(this::processAddedSubreddit,
+                            this::processAddError,
+                            () -> getView().showLoading(false))
+            );
+        } else {
+            getView().showError(FAILED_TO_ADD);
+            getView().showLoading(false);
         }
-        mView.showLoading(false);
+    }
+
+    private void processAddedSubreddit(Subreddit subreddit) {
+        if (subreddit != null) {
+            getView().showAddedSubreddit(subreddit);
+        } else {
+            getView().showError(FAILED_TO_ADD);
+        }
+        getView().showLoading(false);
+    }
+
+    private void processAddError(Throwable throwable) {
+        if (throwable instanceof NoConnectionException
+                || throwable instanceof InvalidSubredditException
+                || throwable instanceof DuplicateSubredditException) {
+            getView().showError(throwable.getMessage());
+        } else {
+            getView().showError(FAILED_TO_ADD);
+        }
+        getView().showLoading(false);
     }
 
     @Override
     public void clearSubreddits() {
-        mRepository.deleteAllSubreddits();
-        mView.showClearedSubreddits();
+        mDisposables.add(Observable.fromCallable(() -> mSubredditsRepository.getSubreddits())
+                .subscribeOn(mScheduler.io())
+                .flatMap(Observable::fromIterable)
+                .doOnNext(subreddit -> mKeywordsRepository.clearKeywords(subreddit.getDisplayName()))
+                .doOnNext(subreddit -> mSubredditsRepository.deleteSubreddit(subreddit.getDisplayName()))
+                .observeOn(mScheduler.mainThread())
+                .subscribe(sub -> {
+                        },
+                        throwable -> {
+                        },
+                        () -> getView().showSubreddits(new ArrayList<>())));
     }
 
     @Override
     public void removeSubreddit(Subreddit subreddit) {
-        mRepository.deleteSubreddit(subreddit.getDisplayName());
-        mView.showSubreddits(mRepository.getSubreddits());
+        if (subreddit != null && subreddit.getDisplayName() != null) {
+            mDisposables.add(Observable.just(subreddit)
+                    .subscribeOn(mScheduler.io())
+                    .doOnNext(sub -> mKeywordsRepository.clearKeywords(sub.getDisplayName()))
+                    .doOnNext(sub -> mSubredditsRepository.deleteSubreddit(sub.getDisplayName()))
+                    .observeOn(mScheduler.mainThread())
+                    .subscribe(sub -> {
+                            },
+                            throwable -> {
+                            },
+                            this::getSubreddits));
+        }
     }
 
     @Override
     public void openSubredditKeywords(Subreddit subreddit) {
-        mView.showSubredditKeywords(subreddit.getDisplayName());
+        if (subreddit != null && subreddit.getDisplayName() != null) {
+            getView().showSubredditKeywords(subreddit.getDisplayName());
+        }
     }
 
     @Override
     public void openSubredditThreads(Subreddit subreddit) {
-        mView.showSubredditThreads(subreddit.getDisplayName());
+        if (subreddit != null && subreddit.getDisplayName() != null) {
+            getView().showSubredditThreads(subreddit.getDisplayName());
+        }
     }
 
     @Override
-    public void unsubscribe(){
-        disposables.clear();
+    protected SubredditsContract.View createFakeView() {
+        return new SubredditsContract.View() {
+            @Override
+            public void showSubreddits(List<Subreddit> subreddits) {
+
+            }
+
+            @Override
+            public void showAddedSubreddit(Subreddit subreddit) {
+
+            }
+
+            @Override
+            public void showSubredditThreads(String subredditName) {
+
+            }
+
+            @Override
+            public void showSubredditKeywords(String subredditName) {
+
+            }
+
+            @Override
+            public void showError(String message) {
+
+            }
+
+            @Override
+            public void showLoading(boolean isLoading) {
+
+            }
+        };
     }
 }

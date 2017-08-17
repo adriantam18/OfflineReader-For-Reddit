@@ -2,27 +2,28 @@ package atamayo.offlinereader.Subreddits;
 
 import java.util.List;
 
-import atamayo.offlinereader.BaseView;
+import atamayo.offlinereader.MVP.BaseView;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
 
+/**
+ * This specifies the contract between the view and the presenter for subreddits.
+ */
 public interface SubredditsContract {
-    interface View extends BaseView<Presenter> {
+    interface View extends BaseView {
         void showSubreddits(List<Subreddit> subreddits);
         void showAddedSubreddit(Subreddit subreddit);
         void showSubredditThreads(String subredditName);
         void showSubredditKeywords(String subredditName);
-        void showClearedSubreddits();
         void showError(String message);
         void showLoading(boolean isLoading);
     }
 
-    interface Presenter {
-        void initSubredditsList();
+    interface Presenter{
+        void getSubreddits();
         void addIfExists(String subreddit);
         void removeSubreddit(Subreddit subreddit);
         void clearSubreddits();
         void openSubredditKeywords(Subreddit subreddit);
         void openSubredditThreads(Subreddit subreddit);
-        void unsubscribe();
     }
 }

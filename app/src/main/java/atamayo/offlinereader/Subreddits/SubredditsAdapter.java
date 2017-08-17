@@ -19,12 +19,12 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.ViewHolder>
- implements Filterable{
+        implements Filterable {
     private List<Subreddit> mOriginalList = null;
     private List<Subreddit> mFilteredList = null;
     private SubListCallbacks mSubListCallbacks;
 
-    public SubredditsAdapter(List<Subreddit> subreddits, SubListCallbacks callbacks){
+    public SubredditsAdapter(List<Subreddit> subreddits, SubListCallbacks callbacks) {
         mOriginalList = subreddits;
         mFilteredList = new ArrayList<>(mOriginalList);
         mSubListCallbacks = callbacks;
@@ -32,11 +32,14 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
 
     public class ViewHolder extends RecyclerView.ViewHolder
             implements View.OnClickListener, View.OnLongClickListener {
-        @BindView(R.id.nsfw_marker) TextView mNSFWMarker;
-        @BindView(R.id.subreddit_name) TextView mSubredditsName;
-        @BindView(R.id.remove_subreddit) ImageButton mRemoveSubreddit;
+        @BindView(R.id.nsfw_marker)
+        TextView mNSFWMarker;
+        @BindView(R.id.subreddit_name)
+        TextView mSubredditsName;
+        @BindView(R.id.remove_subreddit)
+        ImageButton mRemoveSubreddit;
 
-        public ViewHolder(View view){
+        public ViewHolder(View view) {
             super(view);
             view.setOnClickListener(this);
             view.setOnLongClickListener(this);
@@ -44,7 +47,7 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
         }
 
         @OnClick(R.id.remove_subreddit)
-        public void removeSubreddit(View v){
+        public void removeSubreddit(View v) {
             mSubListCallbacks.OnDeleteSubreddit(mFilteredList.get(getAdapterPosition()));
         }
 
@@ -69,9 +72,9 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        if(mFilteredList.get(position).getOver18()) {
+        if (mFilteredList.get(position).getOver18()) {
             holder.mNSFWMarker.setVisibility(View.VISIBLE);
-        }else {
+        } else {
             holder.mNSFWMarker.setVisibility(View.GONE);
         }
         holder.mSubredditsName.setText(mFilteredList.get(position).getDisplayNamePrefixed());
@@ -91,9 +94,9 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
                 ArrayList<Subreddit> filteredArray = new ArrayList<>();
 
                 constraint = constraint.toString().toLowerCase();
-                for(int i = 0; i < mOriginalList.size(); i++){
-                    String subName = mOriginalList.get(i).getDisplayNamePrefixed();
-                    if(subName.toLowerCase().startsWith(constraint.toString())){
+                for (int i = 0; i < mOriginalList.size(); i++) {
+                    String subName = mOriginalList.get(i).getDisplayName();
+                    if (subName.toLowerCase().startsWith(constraint.toString())) {
                         filteredArray.add(mOriginalList.get(i));
                     }
                 }
@@ -114,7 +117,7 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
         return filter;
     }
 
-    public void replaceData(List<Subreddit> newList){
+    public void replaceData(List<Subreddit> newList) {
         mFilteredList.clear();
         mFilteredList.addAll(newList);
         mOriginalList.clear();
@@ -122,22 +125,25 @@ public class SubredditsAdapter extends RecyclerView.Adapter<SubredditsAdapter.Vi
         notifyDataSetChanged();
     }
 
-    public int addData(Subreddit subreddit){
-        mFilteredList.add(0, subreddit);
-        mOriginalList.add(0, subreddit);
-        notifyItemInserted(0);
-        return 0;
+    public void addData(Subreddit subreddit, int position) {
+        mOriginalList.add(position, subreddit);
+        mFilteredList.add(position, subreddit);
+        notifyDataSetChanged();
     }
 
-    public void clearData(){
+    public void clearData() {
         mOriginalList.clear();
         mFilteredList.clear();
         notifyDataSetChanged();
     }
 
-    public List<String> getSubsToDownload(){
+    public List<Subreddit> getData() {
+        return mFilteredList;
+    }
+
+    public List<String> getSubsToDownload() {
         List<String> subsToDownload = new ArrayList<>();
-        for(Subreddit subreddit : mOriginalList){
+        for (Subreddit subreddit : mFilteredList) {
             subsToDownload.add(subreddit.getDisplayName());
         }
 
