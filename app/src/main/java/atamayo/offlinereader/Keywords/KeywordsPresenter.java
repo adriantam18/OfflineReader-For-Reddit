@@ -1,65 +1,111 @@
 package atamayo.offlinereader.Keywords;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
+import atamayo.offlinereader.MVP.BaseRxPresenter;
 import atamayo.offlinereader.Data.KeywordsDataSource;
+import atamayo.offlinereader.Utils.Schedulers.BaseScheduler;
+import io.reactivex.Completable;
+import io.reactivex.Observable;
 
-public class KeywordsPresenter implements KeywordsContract.Presenter {
+/**
+ * Presenter for UI ({@link KeywordsListing}) that displays keywords for
+ * a subreddit.
+ */
+public class KeywordsPresenter extends BaseRxPresenter<KeywordsContract.View>
+        implements KeywordsContract.Presenter {
+    private static final String FAILED_TO_ADD = "Failed to add. You may have it already.";
+    private static final String FAILED_TO_LOAD = "Failed to load keywords.";
+    private static final String FAILED_TO_DELETE = "Failed to delete keyword(s). Try again later.";
+    private String mSubredditName;
     private KeywordsDataSource mKeywordsSource;
-    private List<String> mKeywords;
-    private Set<String> mKeywordsSet;
-    private String mSubreddit;
-    private KeywordsContract.View mView;
+    private BaseScheduler mScheduler;
 
-    public KeywordsPresenter(KeywordsDataSource dataSource, KeywordsContract.View view){
+    public KeywordsPresenter(String subreddit,
+                             KeywordsDataSource dataSource,
+                             BaseScheduler scheduler) {
+        mSubredditName = subreddit;
         mKeywordsSource = dataSource;
-        mView = view;
-        mKeywords = new ArrayList<>();
-        mKeywordsSet = new HashSet<>();
+        mScheduler = scheduler;
     }
 
     @Override
-    public void initKeywordsList(String subreddit) {
-        mKeywordsSet.addAll(mKeywordsSource.getKeywords(subreddit));
-        mKeywords.addAll(mKeywordsSet);
-        mView.showKeywordsList(mKeywords);
-        mSubreddit = subreddit;
+    public void getKeywords() {
+        Observable<List<String>> keywordsObservable = Observable.fromCallable(() ->
+                mKeywordsSource.getKeywords(mSubredditName));
+
+        mDisposables.add(keywordsObservable
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(keywords -> {
+                            Collections.reverse(keywords);
+                            getView().showKeywordsList(keywords);
+                        },
+                        throwable -> getView().showMessage("", FAILED_TO_LOAD),
+                        () -> {
+                        }));
     }
 
     @Override
     public void addKeyword(String keyword) {
-        if(!mKeywordsSet.contains(keyword)) {
-            mKeywordsSet.add(keyword);
-            mKeywords.add(0, keyword);
-            mView.showKeywordsList(mKeywords);
-        }else{
-            mView.showMessage("", "You already have this keyword");
+        Observable<Boolean> keywordsObservable = Observable.fromCallable(() ->
+                mKeywordsSource.addKeyword(mSubredditName, keyword));
+
+        mDisposables.add(keywordsObservable
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(this::processAddKeyword,
+                        throwable -> getView().showMessage("", FAILED_TO_ADD),
+                        () -> {
+                        }));
+    }
+
+    private void processAddKeyword(boolean success) {
+        if (success) {
+            getKeywords();
+        } else {
+            getView().showMessage("", FAILED_TO_ADD);
         }
     }
 
     @Override
     public void removeKeyword(String keyword) {
-        mKeywordsSet.remove(keyword);
-        mKeywords.remove(keyword);
-        mView.showKeywordsList(mKeywords);
+        Completable keywordsCompletable = Completable.fromRunnable(() ->
+                mKeywordsSource.deleteKeyword(mSubredditName, keyword));
+
+        mDisposables.add(keywordsCompletable
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(this::getKeywords,
+                        throwable -> getView().showMessage("", FAILED_TO_DELETE)));
     }
 
     @Override
-    public void clearKeywords(){
-        if(!mSubreddit.isEmpty()) {
-            mKeywordsSource.clearKeywords(mSubreddit);
-            mKeywords.clear();
-            mKeywordsSet.clear();
-            mView.showKeywordsList(mKeywords);
-        }
+    public void clearKeywords() {
+        Completable keywordsCompletable = Completable.fromRunnable(() ->
+                mKeywordsSource.clearKeywords(mSubredditName));
+
+        mDisposables.add(keywordsCompletable
+                .subscribeOn(mScheduler.io())
+                .observeOn(mScheduler.mainThread())
+                .subscribe(() -> getView().showKeywordsList(new ArrayList<>()),
+                        throwable -> getView().showMessage("", FAILED_TO_DELETE)));
     }
 
     @Override
-    public void persistKeywords(){
-        if(!mSubreddit.isEmpty())
-            mKeywordsSource.updateKeywords(mSubreddit, mKeywords);
+    protected KeywordsContract.View createFakeView() {
+        return new KeywordsContract.View() {
+            @Override
+            public void showKeywordsList(List<String> keywords) {
+
+            }
+
+            @Override
+            public void showMessage(String title, String message) {
+
+            }
+        };
     }
 }

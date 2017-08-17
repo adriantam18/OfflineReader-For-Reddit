@@ -23,18 +23,20 @@ public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHo
         mCallback = callback;
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
-        @BindView(R.id.keyword) TextView mKeyword;
-        @BindView(R.id.btn_remove_keyword) ImageButton mRemoveKeyword;
+    public class ViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.keyword)
+        TextView mKeyword;
+        @BindView(R.id.btn_remove_keyword)
+        ImageButton mRemoveKeyword;
 
-        public ViewHolder(View view){
+        public ViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
 
         @OnClick(R.id.btn_remove_keyword)
-        public void removeKeyword(View view){
+        public void removeKeyword(View view) {
             mCallback.OnDeleteKeyword(mKeywords.get(getAdapterPosition()));
         }
     }
@@ -55,8 +57,13 @@ public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHo
         return mKeywords.size();
     }
 
-    public void replaceData(List<String> keywords){
+    public void replaceData(List<String> keywords) {
         mKeywords = keywords;
+        notifyDataSetChanged();
+    }
+
+    public void addData(String keyword, int position) {
+        mKeywords.add(position, keyword);
         notifyDataSetChanged();
     }
 }

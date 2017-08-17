@@ -3,7 +3,12 @@ package atamayo.offlinereader.Data;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import java.util.HashSet;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -13,35 +18,67 @@ import java.util.Set;
  */
 public class KeywordsPreference implements KeywordsDataSource {
     private static final String PREFS_NAME = "subreddits";
-    private SharedPreferences preferences;
-    private SharedPreferences.Editor editor;
-    private Set<String> mCurrkeywords;
+    private static final String KEYWORD_SUFFIX = "_keywords";
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mEditor;
 
-    public KeywordsPreference(Context context){
-        preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        editor = preferences.edit();
-        mCurrkeywords = new HashSet<>();
+    public KeywordsPreference(Context context) {
+        mPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mEditor = mPreferences.edit();
     }
 
     @Override
-    public Set<String> getKeywords(String subName){
-        if(preferences.contains(subName)){
-            mCurrkeywords = preferences.getStringSet(subName, new HashSet<>());
+    public List<String> getKeywords(String subreddit) {
+        String subredditKey = getKeywordsKey(subreddit);
+        Gson gson = new Gson();
+        List<String> keywords = new ArrayList<>();
+
+        if (mPreferences.contains(subredditKey)) {
+            String json = mPreferences.getString(subredditKey, "");
+            Type listType = new TypeToken<ArrayList<String>>() {
+            }.getType();
+            keywords = gson.fromJson(json, listType);
         }
 
-        return mCurrkeywords;
+        return keywords;
     }
 
     @Override
-    public void clearKeywords(String subreddit){
-        editor.remove(subreddit);
-        editor.apply();
+    public boolean addKeyword(String subreddit, String keyword) {
+        String subredditKey = getKeywordsKey(subreddit);
+        Gson gson = new Gson();
+        Set<String> keywords = new LinkedHashSet<>(getKeywords(subreddit));
+
+        if (keywords.add(keyword)) {
+            String json = gson.toJson(keywords);
+            mEditor.putString(subredditKey, json);
+            return mEditor.commit();
+        } else {
+            return false;
+        }
     }
 
     @Override
-    public void updateKeywords(String subreddit, List<String> keywords){
-        Set<String> keywordsSet = new HashSet<>(keywords);
-        editor.putStringSet(subreddit, keywordsSet);
-        editor.apply();
+    public void deleteKeyword(String subreddit, String keyword) {
+        String subredditKey = getKeywordsKey(subreddit);
+        Gson gson = new Gson();
+        Set<String> keywords = new LinkedHashSet<>(getKeywords(subreddit));
+
+        if (keywords.remove(keyword)) {
+            String json = gson.toJson(keywords);
+            mEditor.putString(subredditKey, json);
+            mEditor.commit();
+        }
+    }
+
+    @Override
+    public void clearKeywords(String subreddit) {
+        String subredditKey = getKeywordsKey(subreddit);
+        mEditor.remove(subredditKey);
+        mEditor.commit();
+    }
+
+    private String getKeywordsKey(String subreddit) {
+        return subreddit + KEYWORD_SUFFIX;
     }
 }
