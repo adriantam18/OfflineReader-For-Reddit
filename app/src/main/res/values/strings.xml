@@ -9,6 +9,7 @@
 
     <!--COMMENTS-->
     <string name="btn_load_more_label">LOAD MORE</string>
+    <string name="error_load_comments">Failed to load comments</string>
 
     <!--SUBREDDITS-->
     <string name="subreddit_input_hint">Enter subreddit</string>

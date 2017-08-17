@@ -70,9 +70,9 @@ public class SubredditsListing extends Fragment
 
     @BindView(R.id.enter_item)
     EditText mEnterItem;
-    @BindView(R.id.subs_list)
+    @BindView(R.id.contentView)
     RecyclerView mSubsRecyclerView;
-    @BindView(R.id.show_loading)
+    @BindView(R.id.loadingView)
     ProgressBar mProgessBar;
     @BindView(R.id.toolbar)
     Toolbar mToolbar;

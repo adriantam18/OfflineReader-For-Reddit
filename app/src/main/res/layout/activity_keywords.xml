@@ -6,55 +6,53 @@
 
     <include
         android:id="@+id/toolbar"
-        layout="@layout/toolbar"
-        />
+        layout="@layout/toolbar" />
 
     <ProgressBar
         android:id="@+id/show_loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/user_input"
-        android:layout_below="@id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_below="@id/toolbar"
         android:minHeight="@dimen/user_input_min_height"
-        android:padding="@dimen/user_input_padding">
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_small">
 
         <EditText
             android:id="@+id/enter_keyword"
-            android:hint="@string/keyword_input_hint"
-            android:textSize="@dimen/keyword_text_size"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:maxLines="1"
+            android:hint="@string/keyword_input_hint"
             android:maxLength="24"
+            android:maxLines="1"
             android:scrollHorizontally="true"
-            android:textColorHint="@color/search_keyword_color"
-            android:textColor="@color/search_keyword_color"/>
+            android:textColor="@color/white"
+            android:textColorHint="@color/white"
+            android:textSize="@dimen/default_text_size_large" />
 
         <ImageButton
-            android:contentDescription="@string/add_item"
             android:id="@+id/btn_add_keyword"
-            android:src="@drawable/ic_add_circle_white_36dp"
-            android:background="@color/screen_background_color"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical" />
+            android:layout_gravity="center_vertical"
+            android:background="@color/screen_background_color"
+            android:contentDescription="@string/add_item"
+            android:src="@drawable/ic_add_circle_white_36dp" />
     </LinearLayout>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/keywords_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:transcriptMode="alwaysScroll"
+        android:layout_below="@id/user_input"
         android:dividerHeight="2dp"
-        android:layout_below="@id/user_input">
-    </android.support.v7.widget.RecyclerView>
+        android:transcriptMode="alwaysScroll" />
 
 </RelativeLayout>

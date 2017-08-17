@@ -21,7 +21,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
-    implements ItemTouchHelperAdapter{
+        implements ItemTouchHelperAdapter {
     private List<RedditThread> mThreadDataList;
     private ThreadListCallbacks mThreadListCallbacks;
     private OnLoadMoreItems mLoadMoreCallback;
@@ -31,22 +31,34 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private static final int VIEW_FOOTER = R.layout.thread_footer;
 
     public SubThreadsAdapter(List<RedditThread> threadDataList, ThreadListCallbacks callbacks,
-                             OnLoadMoreItems loadMoreItemsCallback){
+                             OnLoadMoreItems loadMoreItemsCallback) {
         mThreadDataList = threadDataList;
         mThreadListCallbacks = callbacks;
         mLoadMoreCallback = loadMoreItemsCallback;
     }
 
-    public class ThreadViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
-        @Nullable @BindView(R.id.thread_card) CardView cardView;
-        @Nullable @BindView(R.id.score) TextView scoreView;
-        @Nullable @BindView(R.id.thread_title) TextView titleView;
-        @Nullable @BindView(R.id.num_comments) TextView numCommentsView;
-        @Nullable @BindView(R.id.author_and_time) TextView authorView;
-        @BindColor(R.color.thread_title_color) int defaultColor;
-        @BindColor(R.color.thread_title_clicked_color) int clickedColor;
+    public class ThreadViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        @Nullable
+        @BindView(R.id.thread_card)
+        CardView cardView;
+        @Nullable
+        @BindView(R.id.score)
+        TextView scoreView;
+        @Nullable
+        @BindView(R.id.thread_title)
+        TextView titleView;
+        @Nullable
+        @BindView(R.id.num_comments)
+        TextView numCommentsView;
+        @Nullable
+        @BindView(R.id.author_and_time)
+        TextView authorView;
+        @BindColor(R.color.white)
+        int defaultColor;
+        @BindColor(R.color.red_dark)
+        int clickedColor;
 
-        public ThreadViewHolder(View view){
+        public ThreadViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
@@ -54,28 +66,30 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
 
         @Override
-        public void onClick(View v){
+        public void onClick(View v) {
             mThreadListCallbacks.OnOpenCommentsPage(mThreadDataList.get(getAdapterPosition()));
         }
     }
 
-    public class FooterViewHolder extends RecyclerView.ViewHolder{
-        @BindView(R.id.btn_load_more_threads) ImageButton btnLoadMore;
-        @BindView(R.id.progress_bar) ProgressBar progressBar;
+    public class FooterViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.btn_load_more_threads)
+        ImageButton btnLoadMore;
+        @BindView(R.id.progress_bar)
+        ProgressBar progressBar;
 
-        public FooterViewHolder(View view){
+        public FooterViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
 
         @OnClick(R.id.btn_load_more_threads)
-        public void onLoadMoreClicked(View view){
+        public void onLoadMoreClicked(View view) {
             mLoadMoreCallback.loadMore();
         }
     }
 
-    public void onItemDismiss(int position){
+    public void onItemDismiss(int position) {
         mThreadListCallbacks.OnDeleteThread(mThreadDataList.get(position));
     }
 
@@ -117,7 +131,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     @Override
-    public int getItemViewType(int position){
+    public int getItemViewType(int position) {
         if (position == mThreadDataList.size()) {
             return VIEW_FOOTER;
         } else {
@@ -126,7 +140,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView){
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
     }
 
@@ -156,7 +170,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 
-    private void configureFooterView(FooterViewHolder holder){
+    private void configureFooterView(FooterViewHolder holder) {
         if (shouldShowLoading) {
             holder.progressBar.setVisibility(View.VISIBLE);
             holder.btnLoadMore.setVisibility(View.GONE);
@@ -171,25 +185,25 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 
-    public void replaceData(List<RedditThread> newList){
+    public void replaceData(List<RedditThread> newList) {
         mNumRecentlyLoaded = newList.size();
         mThreadDataList.clear();
         mThreadDataList.addAll(newList);
         notifyDataSetChanged();
     }
 
-    public void addData(List<RedditThread> threads){
+    public void addData(List<RedditThread> threads) {
         mNumRecentlyLoaded = threads.size();
         mThreadDataList.addAll(threads);
         notifyDataSetChanged();
     }
 
-    public void showLoading(boolean isLoading){
+    public void showLoading(boolean isLoading) {
         shouldShowLoading = isLoading;
         notifyItemChanged(mThreadDataList.size());
     }
 
-    public int getNumberOfThreads(){
+    public int getNumberOfThreads() {
         return mThreadDataList.size();
     }
 }

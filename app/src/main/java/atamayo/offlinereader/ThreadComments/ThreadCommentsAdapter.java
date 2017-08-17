@@ -34,7 +34,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<RedditComment> mCommentsList;
     private int mNumRecentlyLoaded;
     private OnLoadMoreItems mLoadMoreCallback;
@@ -45,7 +45,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     private Context mContext;
     private boolean shouldShowLoading;
 
-    public ThreadCommentsAdapter(List<RedditComment> comments, OnLoadMoreItems callback, Context context){
+    public ThreadCommentsAdapter(List<RedditComment> comments, OnLoadMoreItems callback, Context context) {
         mCommentsList = comments;
         mNumRecentlyLoaded = 0;
         mLoadMoreCallback = callback;
@@ -53,47 +53,71 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public class ThreadViewHolder extends RecyclerView.ViewHolder {
-        @Nullable @BindView(R.id.title_view) TextView titleView;
-        @Nullable @BindView(R.id.time_author_view) TextView timeAuthorView;
-        @Nullable @BindView(R.id.image) ImageView imageView;
-        @Nullable @BindView(R.id.self_text_view) TextView selftextView;
-        @BindColor(R.color.thread_title_color) int defaultColor;
-        @BindColor(R.color.thread_title_clicked_color) int clickedColor;
+        @Nullable
+        @BindView(R.id.title_view)
+        TextView titleView;
+        @Nullable
+        @BindView(R.id.time_author_view)
+        TextView timeAuthorView;
+        @Nullable
+        @BindView(R.id.image)
+        ImageView imageView;
+        @Nullable
+        @BindView(R.id.self_text_view)
+        TextView selftextView;
+        @BindColor(R.color.white)
+        int defaultColor;
+        @BindColor(R.color.red_dark)
+        int clickedColor;
 
-        public ThreadViewHolder(View view){
+        public ThreadViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
     }
 
-    public class CommentViewHolder extends RecyclerView.ViewHolder{
-        @Nullable @BindView(R.id.depth_marker) View depthMarker;
-        @Nullable @BindView(R.id.info_text_view) TextView infoView;
-        @Nullable @BindView(R.id.comment_body_view) TextView commentBodyView;
-        @Nullable @BindView(R.id.divider) View divider;
-        @BindDimen(R.dimen.depth_marker_width) float depthMarkerWidth;
-        @BindArray(R.array.depth_colors) int[] colors;
+    public class CommentViewHolder extends RecyclerView.ViewHolder {
+        @Nullable
+        @BindView(R.id.depth_marker)
+        View depthMarker;
+        @Nullable
+        @BindView(R.id.info_text_view)
+        TextView infoView;
+        @Nullable
+        @BindView(R.id.comment_body_view)
+        TextView commentBodyView;
+        @Nullable
+        @BindView(R.id.divider)
+        View divider;
+        @BindDimen(R.dimen.depth_marker_width)
+        float depthMarkerWidth;
+        @BindArray(R.array.depth_colors)
+        int[] colors;
 
-        public CommentViewHolder(View view){
+        public CommentViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
     }
 
-    public class FooterViewHolder extends RecyclerView.ViewHolder{
-        @Nullable @BindView(R.id.btn_load_more_comments) Button btnLoadMore;
-        @Nullable @BindView(R.id.progress_bar) ProgressBar progressBar;
+    public class FooterViewHolder extends RecyclerView.ViewHolder {
+        @Nullable
+        @BindView(R.id.btn_load_more_comments)
+        Button btnLoadMore;
+        @Nullable
+        @BindView(R.id.progress_bar)
+        ProgressBar progressBar;
 
-        public FooterViewHolder(View view){
+        public FooterViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
 
         @OnClick(R.id.btn_load_more_comments)
-        public void onLoadMoreClicked(View view){
+        public void onLoadMoreClicked(View view) {
             mLoadMoreCallback.loadMore();
         }
     }
@@ -142,12 +166,12 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView){
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
     }
 
     @Override
-    public int getItemViewType(int position){
+    public int getItemViewType(int position) {
         if (position == 0) {
             return VIEW_HEADER;
         } else if (position == mCommentsList.size() + 1) {
@@ -157,7 +181,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    private void configureHeaderView(ThreadViewHolder holder){
+    private void configureHeaderView(ThreadViewHolder holder) {
         if (mThread != null) {
             holder.titleView.setText(mThread.getTitle());
             holder.titleView.setTextColor(holder.clickedColor);
@@ -184,7 +208,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    private void configureCommentViews(CommentViewHolder holder, int position){
+    private void configureCommentViews(CommentViewHolder holder, int position) {
         RedditComment comment = mCommentsList.get(position);
 
         String points = Integer.toString(comment.getScore()) + " points";
@@ -220,7 +244,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         holder.depthMarker.setBackgroundColor(depthMarkerColor);
     }
 
-    private void configureFooterView(FooterViewHolder holder){
+    private void configureFooterView(FooterViewHolder holder) {
         if (shouldShowLoading) {
             holder.progressBar.setVisibility(View.VISIBLE);
             holder.btnLoadMore.setVisibility(View.GONE);
@@ -235,29 +259,29 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    public void addThread(RedditThread thread){
+    public void addThread(RedditThread thread) {
         mThread = thread;
     }
 
-    public void replaceData(List<RedditComment> newList){
+    public void replaceData(List<RedditComment> newList) {
         mNumRecentlyLoaded = newList.size();
         mCommentsList.clear();
         mCommentsList.addAll(newList);
         notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
     }
 
-    public void addData(List<RedditComment> moreComments){
+    public void addData(List<RedditComment> moreComments) {
         mNumRecentlyLoaded = moreComments.size();
         mCommentsList.addAll(moreComments);
         notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
     }
 
-    public void showLoading(boolean isLoading){
+    public void showLoading(boolean isLoading) {
         shouldShowLoading = isLoading;
         notifyItemChanged(mCommentsList.size() + 1);
     }
 
-    private Spanned fromHtml(String htmlText){
+    private Spanned fromHtml(String htmlText) {
         String formatted = StringEscapeUtils.unescapeHtml4(htmlText);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return Html.fromHtml(formatted, Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST | Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM);
@@ -266,7 +290,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    private CharSequence trim(CharSequence s, int start, int end){
+    private CharSequence trim(CharSequence s, int start, int end) {
         while (start < end && Character.isWhitespace(s.charAt(start))) {
             start++;
         }
@@ -278,7 +302,7 @@ public class ThreadCommentsAdapter  extends RecyclerView.Adapter<RecyclerView.Vi
         return s.subSequence(start, end);
     }
 
-    private class TagHandler implements Html.TagHandler{
+    private class TagHandler implements Html.TagHandler {
 
         @Override
         public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {

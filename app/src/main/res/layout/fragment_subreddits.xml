@@ -6,54 +6,59 @@
 
     <include
         android:id="@+id/toolbar"
-        layout="@layout/toolbar"
-        />
+        layout="@layout/toolbar" />
 
     <ProgressBar
-        android:id="@+id/show_loading"
+        android:id="@+id/loadingView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/user_input"
-        android:layout_below="@id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_below="@id/toolbar"
         android:minHeight="@dimen/user_input_min_height"
-        android:padding="@dimen/user_input_padding">
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_small">
 
         <EditText
             android:id="@+id/enter_item"
-            android:hint="@string/subreddit_input_hint"
-            android:textSize="@dimen/subreddit_text_size"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:hint="@string/subreddit_input_hint"
             android:inputType="text"
             android:maxLines="1"
             android:scrollHorizontally="true"
-            android:textColorHint="@color/search_subreddit_color"
-            android:textColor="@color/search_subreddit_color"/>
+            android:textColor="@color/white"
+            android:textColorHint="@color/white"
+            android:textSize="@dimen/default_text_size_large" />
+
         <ImageButton
-            android:contentDescription="@string/add_item"
             android:id="@+id/btn_add_subreddit"
-            android:src="@drawable/ic_add_circle_white_36dp"
-            android:background="@color/screen_background_color"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical" />
+            android:layout_gravity="center_vertical"
+            android:background="@color/screen_background_color"
+            android:contentDescription="@string/add_item"
+            android:src="@drawable/ic_add_circle_white_36dp" />
     </LinearLayout>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/subs_list"
+        android:id="@+id/contentView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/user_input"
-        android:transcriptMode="alwaysScroll"
-        android:dividerHeight="2dp">
-    </android.support.v7.widget.RecyclerView>
+        android:dividerHeight="2dp"
+        android:transcriptMode="alwaysScroll" />
+
+    <TextView
+        android:id="@+id/errorView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/default_text_size_large" />
 
 </RelativeLayout>

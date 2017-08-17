@@ -25,12 +25,12 @@ public class ConfirmDialog extends DialogFragment {
     }
 
     @Override
-    public void onAttach(Context context){
+    public void onAttach(Context context) {
         super.onAttach(context);
-        try{
-            if(getTargetFragment() == null)
+        try {
+            if (getTargetFragment() == null)
                 mCallback = (ConfirmDialogListener) context;
-        }catch (ClassCastException e){
+        } catch (ClassCastException e) {
             Log.e("Dialog", e.toString());
         }
     }
@@ -39,7 +39,7 @@ public class ConfirmDialog extends DialogFragment {
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         try{
-            if(mCallback == null)
+            if(mCallback == null && getTargetFragment() != null)
                 mCallback = (ConfirmDialogListener) getTargetFragment();
         }catch (ClassCastException e){
             Log.e("DIALOG", e.toString());

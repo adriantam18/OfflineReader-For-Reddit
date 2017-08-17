@@ -5,44 +5,17 @@
 
     <dimen name="window_default_padding">16dp</dimen>
 
-    <!--REDDIT THREADS-->
-    <dimen name="thread_title_text_size">16sp</dimen>
-    <dimen name="thread_score_text_size">16sp</dimen>
-    <dimen name="thread_labels_text_size">14sp</dimen>
-    <dimen name="thread_card_padding_top">16dp</dimen>
-    <dimen name="thread_card_padding_bottom">24dp</dimen>
-    <dimen name="thread_card_padding_start">16dp</dimen>
-    <dimen name="thread_card_padding_end">16dp</dimen>
-    <dimen name="card_margin_top">4dp</dimen>
-    <dimen name="card_margin_start">8dp</dimen>
-    <dimen name="card_margin_end">8dp</dimen>
-    <dimen name="card_margin_bottom">4dp</dimen>
-    <dimen name="thread_score_margin_end">8dp</dimen>
-    <dimen name="thread_title_margin_bottom">8dp</dimen>
+    <dimen name="spacing_xtra_small">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_normal">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
 
-    <!--KEYWORDS-->
-    <dimen name="keyword_text_size">21sp</dimen>
-
-    <!--SUBREDDITS-->
-    <dimen name="subreddit_text_size">21sp</dimen>
-
-    <!--SUBREDDITS AND KEYWORDS-->
     <dimen name="one_line_list_item_min_height">56dp</dimen>
-    <dimen name="one_line_list_item_padding">16dp</dimen>
-    <dimen name="one_line_text_margin_end">8dp</dimen>
     <dimen name="user_input_min_height">48dp</dimen>
-    <dimen name="user_input_padding">8dp</dimen>
 
-    <!--COMMENTS-->
-    <dimen name="header_title_text_size">21sp</dimen>
-    <dimen name="header_self_text_size">17sp</dimen>
-    <dimen name="header_author_time_text_size">15sp</dimen>
-    <dimen name="comment_info_text_size">15sp</dimen>
-    <dimen name="comment_body_text_size">17sp</dimen>
-    <dimen name="header_margin_start">8dp</dimen>
-    <dimen name="header_margin_end">8dp</dimen>
-    <dimen name="header_margin_bottom">8dp</dimen>
-    <dimen name="header_padding_start">8dp</dimen>
-    <dimen name="header_padding_end">8dp</dimen>
+    <dimen name="default_text_size_large">20sp</dimen>
+    <dimen name="default_text_size_normal">16sp</dimen>
+    <dimen name="default_text_size_small">14sp</dimen>
+
     <dimen name="depth_marker_width">10dp</dimen>
 </resources>
