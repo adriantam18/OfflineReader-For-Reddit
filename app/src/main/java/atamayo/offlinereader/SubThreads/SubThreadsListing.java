@@ -56,18 +56,23 @@ public class SubThreadsListing extends Fragment
     private static final int ITEMS_PER_PAGE = 10;
     private Unbinder unbinder;
     private SubThreadsAdapter mAdapter;
-    private SubThreadsContract.Presenter mPresenter;
+    private SubThreadsPresenter mPresenter;
     private OnThreadSelectedListener onThreadSelectedListener;
     private Parcelable mListState;
     private int mNumRequestedThreads;
 
-    @BindView(R.id.sub_threads_list) RecyclerView mSubThreadsList;
-    @BindView(R.id.error_msg) TextView mErrorMessage;
-    @BindView(R.id.toolbar) Toolbar mToolbar;
-    @BindView(R.id.title) TextView mTitle;
-    @BindView(R.id.refresh_list_layout) SwipeRefreshLayout mRefresh;
+    @BindView(R.id.sub_threads_list)
+    RecyclerView mSubThreadsList;
+    @BindView(R.id.error_msg)
+    TextView mErrorMessage;
+    @BindView(R.id.toolbar)
+    Toolbar mToolbar;
+    @BindView(R.id.title)
+    TextView mTitle;
+    @BindView(R.id.refresh_list_layout)
+    SwipeRefreshLayout mRefresh;
 
-    public interface OnThreadSelectedListener{
+    public interface OnThreadSelectedListener {
         void launchCommentsPage(Bundle args);
     }
 
@@ -83,7 +88,7 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState){
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
 
@@ -91,13 +96,14 @@ public class SubThreadsListing extends Fragment
         FileManager commentFileManager = new FileManager(getActivity());
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
                 daoSession.getSubredditDao(), commentFileManager);
+
         mPresenter = new SubThreadsPresenter(getArguments().getString(SUBREDDIT, ""), repository,
-                this, new AppScheduler());
+                new AppScheduler());
         mAdapter = new SubThreadsAdapter(new ArrayList<>(), this, this);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState){
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_sub_threads, container, false);
 
         unbinder = ButterKnife.bind(this, view);
@@ -118,7 +124,7 @@ public class SubThreadsListing extends Fragment
         itemTouchHelper.attachToRecyclerView(mSubThreadsList);
 
         mRefresh.setOnRefreshListener(() ->
-            mPresenter.getThreads(true, 0, ITEMS_PER_PAGE));
+                mPresenter.getThreads(true, 0, ITEMS_PER_PAGE));
 
         if (savedInstanceState != null) {
             mListState = savedInstanceState.getParcelable(LIST_STATE);
@@ -131,28 +137,27 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState){
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.attachView(this);
         mPresenter.getThreads(true, 0, mNumRequestedThreads);
     }
 
     @Override
-    public void onResume(){
-        super.onResume();
-        mPresenter.subscribe(this);
-    }
-
-    @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
 
         mListState = mSubThreadsList.getLayoutManager().onSaveInstanceState();
-        mPresenter.unsubscribe();
+        mPresenter.detachView();
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState){
+    public void onSaveInstanceState(Bundle outState) {
         outState.putParcelable(LIST_STATE, mListState);
         outState.putInt(NUM_REQUESTED_THREADS, mAdapter.getNumberOfThreads());
 
@@ -160,25 +165,25 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void onDestroyView(){
+    public void onDestroyView() {
         super.onDestroyView();
         unbinder.unbind();
     }
 
     @Override
-    public void onDestroy(){
+    public void onDestroy() {
         super.onDestroy();
         RefWatcher refWatcher = App.getRefWatcher(getActivity());
         refWatcher.watch(this);
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater){
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.subthreads_menu, menu);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item){
+    public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_download:
                 mPresenter.downloadThreads();
@@ -207,12 +212,12 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void showMoreThreads(List<RedditThread> threads){
+    public void showMoreThreads(List<RedditThread> threads) {
         mAdapter.addData(threads);
     }
 
     @Override
-    public void showEmptyThreads(){
+    public void showEmptyThreads() {
         mSubThreadsList.setVisibility(View.GONE);
         mErrorMessage.setVisibility(View.VISIBLE);
         mErrorMessage.setText("No threads to show");
@@ -220,7 +225,7 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void showLoading(boolean isLoading){
+    public void showLoading(boolean isLoading) {
         mAdapter.showLoading(isLoading);
     }
 
@@ -233,7 +238,7 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void startDownloadService(List<String> subreddits){
+    public void startDownloadService(List<String> subreddits) {
         Intent intent = new Intent(getActivity(), SubredditService.class);
         intent.putExtra(SubredditService.EXTRA_SUBREDDIT, (ArrayList<String>) subreddits);
         getActivity().startService(intent);
@@ -242,22 +247,17 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void setPresenter(SubThreadsContract.Presenter presenter) {
-        mPresenter = presenter;
-    }
-
-    @Override
-    public void OnOpenCommentsPage(RedditThread thread){
+    public void OnOpenCommentsPage(RedditThread thread) {
         mPresenter.openCommentsPage(thread);
     }
 
     @Override
-    public void OnDeleteThread(RedditThread thread){
+    public void OnDeleteThread(RedditThread thread) {
         mPresenter.removeThread(thread);
     }
 
     @Override
-    public void loadMore(){
+    public void loadMore() {
         mPresenter.getThreads(false, mAdapter.getNumberOfThreads(), ITEMS_PER_PAGE);
     }
 }

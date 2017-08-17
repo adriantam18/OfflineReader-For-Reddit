@@ -2,13 +2,14 @@ package atamayo.offlinereader.SubThreads;
 
 import java.util.List;
 
-import atamayo.offlinereader.BasePresenter;
-import atamayo.offlinereader.BaseView;
+import atamayo.offlinereader.MVP.BaseView;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
-import atamayo.offlinereader.ThreadComments.ThreadCommentsContract;
 
+/**
+ * This specifies the contract between the view and presenter for Reddit threads.
+ */
 public interface SubThreadsContract {
-    interface View extends BaseView<SubThreadsContract.Presenter>{
+    interface View extends BaseView{
         void showInitialThreads(List<RedditThread> threads);
         void showMoreThreads(List<RedditThread> threads);
         void showEmptyThreads();
@@ -17,7 +18,7 @@ public interface SubThreadsContract {
         void startDownloadService(List<String> subreddit);
     }
 
-    interface Presenter extends BasePresenter<SubThreadsContract.View>{
+    interface Presenter{
         void getThreads(boolean firstLoad, int offset, int limit);
         void removeThread(RedditThread thread);
         void removeAllThreads();
