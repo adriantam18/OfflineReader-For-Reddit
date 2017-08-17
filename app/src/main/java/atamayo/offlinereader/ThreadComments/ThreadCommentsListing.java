@@ -14,13 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import atamayo.offlinereader.App;
+import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.SubredditsRepository;
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditDAO.DaoSession;
-import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import atamayo.offlinereader.Utils.Schedulers.AppScheduler;
 import butterknife.BindView;
@@ -41,10 +41,12 @@ public class ThreadCommentsListing extends Fragment
     private int mNumRequestedParentComments;
     private Parcelable mCommentsListState;
 
-    @BindView(R.id.error_msg) TextView mErrorMessage;
-    @BindView(R.id.comments_list) RecyclerView mCommentsList;
+    @BindView(R.id.error_msg)
+    TextView mErrorMessage;
+    @BindView(R.id.comments_list)
+    RecyclerView mCommentsList;
     ThreadCommentsAdapter mAdapter;
-    ThreadCommentsContract.Presenter mPresenter;
+    ThreadCommentsPresenter mPresenter;
     Unbinder unbinder;
 
     @Override
@@ -55,8 +57,9 @@ public class ThreadCommentsListing extends Fragment
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
                 daoSession.getSubredditDao(), fileManager);
+
         mPresenter = new ThreadCommentsPresenter(getArguments().getString(THREAD_FULL_NAME, ""), repository,
-                this, new AppScheduler());
+                new AppScheduler());
         mAdapter = new ThreadCommentsAdapter(new ArrayList<>(0), this, getActivity());
     }
 
@@ -80,17 +83,17 @@ public class ThreadCommentsListing extends Fragment
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState){
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        mPresenter.getParentThread();
-        mPresenter.getComments(true, 0, mNumRequestedParentComments);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mPresenter.subscribe(this);
+
+        mPresenter.attachView(this);
+        mPresenter.getParentThread();
+        mPresenter.getComments(true, 0, mNumRequestedParentComments);
     }
 
     @Override
@@ -104,11 +107,11 @@ public class ThreadCommentsListing extends Fragment
         super.onPause();
 
         mCommentsListState = mCommentsList.getLayoutManager().onSaveInstanceState();
-        mPresenter.unsubscribe();
+        mPresenter.detachView();
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState){
+    public void onSaveInstanceState(Bundle outState) {
         outState.putParcelable(LIST_STATE, mCommentsListState);
         outState.putInt(PARENT_COMMENTS_IN_VIEW, mNumRequestedParentComments);
 
@@ -116,7 +119,7 @@ public class ThreadCommentsListing extends Fragment
     }
 
     @Override
-    public void showParentThread(RedditThread thread){
+    public void showParentThread(RedditThread thread) {
         mAdapter.addThread(thread);
     }
 
@@ -142,19 +145,14 @@ public class ThreadCommentsListing extends Fragment
     }
 
     @Override
-    public void showEmptyComments(){
+    public void showEmptyComments() {
         mCommentsList.setVisibility(View.GONE);
         mErrorMessage.setVisibility(View.VISIBLE);
     }
 
     @Override
-    public void showLoading(boolean isLoading){
+    public void showLoading(boolean isLoading) {
         mAdapter.showLoading(isLoading);
-    }
-
-    @Override
-    public void setPresenter(ThreadCommentsContract.Presenter presenter) {
-        mPresenter = presenter;
     }
 
     @Override
