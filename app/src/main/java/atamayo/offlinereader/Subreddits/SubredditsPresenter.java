@@ -21,6 +21,8 @@ public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View
         implements SubredditsContract.Presenter {
     private final static String FAILED_TO_ADD = "Failed to add. Subreddit may not exist";
     private final static String FAILED_TO_LOAD = "Failed to load subreddits";
+    private final static String FAILED_TO_DELETE = "Failed to delete subreddit";
+    private final static String FAILED_TO_CLEAR_ALL = "Failed to clear subreddits";
     private SubredditsDataSource mSubredditsRepository;
     private KeywordsDataSource mKeywordsRepository;
     private RedditDownloader mDownloader;
@@ -41,10 +43,7 @@ public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View
         mDisposables.add(Observable.fromCallable(() -> mSubredditsRepository.getSubreddits())
                 .subscribeOn(mScheduler.io())
                 .observeOn(mScheduler.mainThread())
-                .subscribe(subreddits -> {
-                            getView().showSubreddits(subreddits);
-                            getView().showLoading(false);
-                        },
+                .subscribe(subreddits -> getView().showSubreddits(subreddits),
                         throwable -> {
                             getView().showLoading(false);
                             getView().showError(FAILED_TO_LOAD);
@@ -77,7 +76,6 @@ public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View
         } else {
             getView().showError(FAILED_TO_ADD);
         }
-        getView().showLoading(false);
     }
 
     private void processAddError(Throwable throwable) {
@@ -101,8 +99,7 @@ public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View
                 .observeOn(mScheduler.mainThread())
                 .subscribe(sub -> {
                         },
-                        throwable -> {
-                        },
+                        throwable -> getView().showError(FAILED_TO_CLEAR_ALL),
                         () -> getView().showSubreddits(new ArrayList<>())));
     }
 
@@ -116,8 +113,7 @@ public class SubredditsPresenter extends BaseRxPresenter<SubredditsContract.View
                     .observeOn(mScheduler.mainThread())
                     .subscribe(sub -> {
                             },
-                            throwable -> {
-                            },
+                            throwable -> getView().showError(FAILED_TO_DELETE),
                             this::getSubreddits));
         }
     }
