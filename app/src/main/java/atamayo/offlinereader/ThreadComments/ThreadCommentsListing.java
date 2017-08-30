@@ -53,14 +53,23 @@ public class ThreadCommentsListing extends Fragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        FileManager fileManager = new FileManager(getActivity());
-        DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
-        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
-                daoSession.getSubredditDao(), fileManager);
+        Bundle args = getArguments();
+        String threadFullName = args != null ? args.getString(THREAD_FULL_NAME, "")
+                : "";
 
-        mPresenter = new ThreadCommentsPresenter(getArguments().getString(THREAD_FULL_NAME, ""), repository,
-                new AppScheduler());
+        DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
+        FileManager commentFileManager = new FileManager(getActivity());
+        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
+                daoSession.getSubredditDao(), commentFileManager);
+        mPresenter = new ThreadCommentsPresenter(threadFullName, repository, new AppScheduler());
         mAdapter = new ThreadCommentsAdapter(new ArrayList<>(0), this, getActivity());
+
+        if (savedInstanceState != null) {
+            mCommentsListState = savedInstanceState.getParcelable(LIST_STATE);
+            mNumRequestedParentComments = savedInstanceState.getInt(PARENT_COMMENTS_IN_VIEW, ITEMS_PER_PAGE);
+        } else {
+            mNumRequestedParentComments = ITEMS_PER_PAGE;
+        }
     }
 
     @Override
@@ -71,13 +80,6 @@ public class ThreadCommentsListing extends Fragment
 
         mCommentsList.setLayoutManager(new LinearLayoutManager(getActivity()));
         mCommentsList.setAdapter(mAdapter);
-
-        if (savedInstanceState != null) {
-            mCommentsListState = savedInstanceState.getParcelable(LIST_STATE);
-            mNumRequestedParentComments = savedInstanceState.getInt(PARENT_COMMENTS_IN_VIEW, ITEMS_PER_PAGE);
-        } else {
-            mNumRequestedParentComments = ITEMS_PER_PAGE;
-        }
 
         return view;
     }
