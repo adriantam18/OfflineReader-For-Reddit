@@ -44,7 +44,7 @@ public class ThreadCommentsPresenter extends BaseRxPresenter<ThreadCommentsContr
                 .observeOn(mScheduler.mainThread())
                 .subscribe(comments -> processComments(comments, firstLoad),
                         throwable -> processError(throwable, firstLoad),
-                        this::processComplete)
+                        () -> getView().showLoading(false))
         );
     }
 
@@ -54,8 +54,6 @@ public class ThreadCommentsPresenter extends BaseRxPresenter<ThreadCommentsContr
         } else {
             getView().showMoreComments(comments);
         }
-
-        getView().showLoading(false);
     }
 
     private void processError(Throwable e, boolean firstLoad) {
@@ -63,10 +61,6 @@ public class ThreadCommentsPresenter extends BaseRxPresenter<ThreadCommentsContr
             getView().showEmptyComments();
         }
 
-        getView().showLoading(false);
-    }
-
-    private void processComplete() {
         getView().showLoading(false);
     }
 
