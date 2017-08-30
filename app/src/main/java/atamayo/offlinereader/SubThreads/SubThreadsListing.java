@@ -26,6 +26,8 @@ import com.squareup.leakcanary.RefWatcher;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import atamayo.offlinereader.App;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.SubredditsRepository;
@@ -92,14 +94,23 @@ public class SubThreadsListing extends Fragment
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
 
+        Bundle args = getArguments();
+        String subredditName = args != null ? args.getString(SUBREDDIT, "")
+                : "";
+
         DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
         FileManager commentFileManager = new FileManager(getActivity());
         SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
                 daoSession.getSubredditDao(), commentFileManager);
-
-        mPresenter = new SubThreadsPresenter(getArguments().getString(SUBREDDIT, ""), repository,
-                new AppScheduler());
+        mPresenter = new SubThreadsPresenter(subredditName, repository, new AppScheduler());
         mAdapter = new SubThreadsAdapter(new ArrayList<>(), this, this);
+
+        if (savedInstanceState != null) {
+            mListState = savedInstanceState.getParcelable(LIST_STATE);
+            mNumRequestedThreads = savedInstanceState.getInt(NUM_REQUESTED_THREADS, ITEMS_PER_PAGE);
+        } else {
+            mNumRequestedThreads = ITEMS_PER_PAGE;
+        }
     }
 
     @Override
@@ -125,13 +136,6 @@ public class SubThreadsListing extends Fragment
 
         mRefresh.setOnRefreshListener(() ->
                 mPresenter.getThreads(true, 0, ITEMS_PER_PAGE));
-
-        if (savedInstanceState != null) {
-            mListState = savedInstanceState.getParcelable(LIST_STATE);
-            mNumRequestedThreads = savedInstanceState.getInt(NUM_REQUESTED_THREADS, ITEMS_PER_PAGE);
-        } else {
-            mNumRequestedThreads = ITEMS_PER_PAGE;
-        }
 
         return view;
     }
@@ -247,6 +251,11 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
+    public void showMessage(String message) {
+        Snackbar.make(getActivity().findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show();
+    }
+
+    @Override
     public void OnOpenCommentsPage(RedditThread thread) {
         mPresenter.openCommentsPage(thread);
     }
@@ -259,5 +268,6 @@ public class SubThreadsListing extends Fragment
     @Override
     public void loadMore() {
         mPresenter.getThreads(false, mAdapter.getNumberOfThreads(), ITEMS_PER_PAGE);
+        mNumRequestedThreads += ITEMS_PER_PAGE;
     }
 }

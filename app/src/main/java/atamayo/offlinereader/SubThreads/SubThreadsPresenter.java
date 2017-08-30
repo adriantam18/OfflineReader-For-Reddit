@@ -18,6 +18,9 @@ import io.reactivex.Observable;
  */
 public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View>
         implements SubThreadsContract.Presenter {
+    private static final String FAILED_TO_DELETE = "Failed to delete thread";
+    private static final String FAILED_TO_CLEAR_ALL = "Failed to clear threads";
+    private static final String FAILED_TO_LOAD_COMMENTS = "Unable to open comments page";
     private Subreddit mSubreddit;
     private SubredditsDataSource mRepository;
     private BaseScheduler mScheduler;
@@ -44,8 +47,7 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
                 .observeOn(mScheduler.mainThread())
                 .subscribe(threads -> processThreads(threads, firstLoad),
                         throwable -> processError(throwable, firstLoad),
-                        () -> {
-                        }));
+                        () -> getView().showLoading(false)));
     }
 
     private void processThreads(List<RedditThread> threads, boolean firstLoad) {
@@ -60,8 +62,6 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
             getView().showMoreThreads(threads);
             mItemsShown += threads.size();
         }
-
-        getView().showLoading(false);
     }
 
     private void processError(Throwable throwable, boolean firstLoad) {
@@ -81,7 +81,8 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
         mDisposables.add(threadCompletable
                 .subscribeOn(mScheduler.io())
                 .observeOn(mScheduler.mainThread())
-                .subscribe(() -> getThreads(true, 0, mItemsShown)));
+                .subscribe(() -> getThreads(true, 0, mItemsShown),
+                        throwable -> getView().showMessage(FAILED_TO_DELETE)));
     }
 
     @Override
@@ -94,9 +95,8 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
         mDisposables.add(threadCompletable
                 .subscribeOn(mScheduler.io())
                 .observeOn(mScheduler.mainThread())
-                .subscribe());
-
-        getView().showEmptyThreads();
+                .subscribe(() -> getView().showEmptyThreads(),
+                        throwable -> getView().showMessage(FAILED_TO_CLEAR_ALL)));
     }
 
     @Override
@@ -114,9 +114,8 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
         mDisposables.add(threadCompletable
                 .subscribeOn(mScheduler.io())
                 .observeOn(mScheduler.mainThread())
-                .subscribe());
-
-        getView().showCommentsPage(thread.getFullName());
+                .subscribe(() -> getView().showCommentsPage(thread.getFullName()),
+                        throwable -> getView().showMessage(FAILED_TO_LOAD_COMMENTS)));
     }
 
     @Override
@@ -144,6 +143,11 @@ public class SubThreadsPresenter extends BaseRxPresenter<SubThreadsContract.View
 
             @Override
             public void showCommentsPage(String threadFullName) {
+
+            }
+
+            @Override
+            public void showMessage(String message) {
 
             }
 

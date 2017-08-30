@@ -15,6 +15,7 @@ public interface SubThreadsContract {
         void showEmptyThreads();
         void showLoading(boolean isLoading);
         void showCommentsPage(String threadFullName);
+        void showMessage(String message);
         void startDownloadService(List<String> subreddit);
     }
 
