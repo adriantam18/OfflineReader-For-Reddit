@@ -230,38 +230,7 @@ public class RedditThread extends RedditObject {
     }
 
     public String getFormattedTime(){
-        long seconds = (System.currentTimeMillis() - (this.getCreatedUTC() * 1000)) / 1000;
-        if(seconds < 60){
-            return Long.toString(seconds) + " second(s) ago";
-        }
-
-        long minutes = seconds / 60;
-        if(minutes < 60){
-            return Long.toString(minutes) + " minute(s) ago";
-        }
-
-        long hours = minutes / 60;
-        if(hours < 24){
-            return Long.toString(hours) + " hour(s) ago";
-        }
-
-        long days = hours / 24;
-        if(days < 7){
-            return Long.toString(days) + " day(s) ago";
-        }
-
-        long weeks = days / 7;
-        if(weeks < 4){
-            return Long.toString(weeks) + " week(s) ago";
-        }
-
-        long months = weeks / 4;
-        if(months < 12){
-            return Long.toString(months) + " month(s) ago";
-        }
-
-        long years = months / 12;
-        return Long.toString(years) + " year(s) ago";
+        return RedditTimeFormatter.format(this.createdUTC);
     }
 
     public long getCreatedUTC() {
