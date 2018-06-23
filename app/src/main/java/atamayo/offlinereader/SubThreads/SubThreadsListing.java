@@ -26,8 +26,6 @@ import com.squareup.leakcanary.RefWatcher;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import atamayo.offlinereader.App;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.SubredditsRepository;
