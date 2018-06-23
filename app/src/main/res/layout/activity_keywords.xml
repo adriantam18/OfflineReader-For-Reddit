@@ -30,6 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="@string/keyword_input_hint"
+            android:inputType="text"
             android:maxLength="24"
             android:maxLines="1"
             android:scrollHorizontally="true"
