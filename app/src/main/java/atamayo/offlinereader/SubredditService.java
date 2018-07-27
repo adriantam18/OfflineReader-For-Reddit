@@ -88,7 +88,7 @@ public class SubredditService extends Service {
                         .map(redditThread ->
                                 Pair.create(redditThread, redditDownloader.getComments(redditThread.getSubreddit(), redditThread.getThreadId())))
                         .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingFirst("")),
-                                throwable -> {},
+                                this::processError,
                                 this::processCompletedTask));
             }
         }else{
@@ -103,6 +103,20 @@ public class SubredditService extends Service {
         compositeDisposable.dispose();
 
         super.onDestroy();
+    }
+
+    /**
+     * Notifies the user of an error and stops the service from continuing.
+     */
+    private void processError(Throwable throwable) {
+        Notification notification = mNotificationBuilder
+                .setContentIntent(getMainActivityIntent())
+                .setProgress(0, 0, false)
+                .setContentText("Error occured. Some threads may not have been downloaded")
+                .build();
+
+        mNotificationManager.notify(NOTIF_ID, notification);
+        stopSelf();
     }
 
     /**
