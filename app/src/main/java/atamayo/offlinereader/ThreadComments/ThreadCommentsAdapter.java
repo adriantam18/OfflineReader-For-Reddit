@@ -67,7 +67,7 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         TextView selftextView;
         @BindColor(R.color.white)
         int defaultColor;
-        @BindColor(R.color.red_dark)
+        @BindColor(R.color.red_500)
         int clickedColor;
 
         public ThreadViewHolder(View view) {

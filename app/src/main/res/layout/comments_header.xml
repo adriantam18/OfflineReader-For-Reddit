@@ -19,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/spacing_small"
-        android:textColor="@color/blue_dark"
+        android:textColor="@color/gray_500"
         android:textSize="@dimen/default_text_size_small" />
 
     <LinearLayout

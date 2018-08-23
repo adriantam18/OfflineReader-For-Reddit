@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/screen_background_color">
+    android:layout_height="match_parent">
 
     <include
         android:id="@+id/toolbar"
@@ -38,11 +37,11 @@
             android:textSize="@dimen/default_text_size_large" />
 
         <ImageButton
+            style="@style/OnScreenIcons"
             android:id="@+id/btn_add_subreddit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:background="@color/screen_background_color"
             android:contentDescription="@string/add_item"
             android:src="@drawable/ic_add_circle_white_36dp" />
     </LinearLayout>

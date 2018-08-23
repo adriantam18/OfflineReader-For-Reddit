@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/refresh_list_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/screen_background_color"
     android:orientation="vertical">
 
     <RelativeLayout
@@ -19,7 +19,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/toolbar"
-            android:dividerHeight="2dp" />
+            android:dividerHeight="2dp"
+            tools:listitem="@layout/sub_threads_list_item"/>
 
         <TextView
             android:id="@+id/error_msg"

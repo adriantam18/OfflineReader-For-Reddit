@@ -55,7 +55,7 @@ public class SubThreadsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         TextView authorView;
         @BindColor(R.color.white)
         int defaultColor;
-        @BindColor(R.color.red_dark)
+        @BindColor(R.color.red_500)
         int clickedColor;
 
         public ThreadViewHolder(View view) {

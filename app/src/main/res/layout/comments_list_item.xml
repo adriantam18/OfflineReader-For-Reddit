@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/screen_background_color"
+    xmlns:tools="http://schemas.android.com/tools"
     android:minHeight="@dimen/one_line_list_item_min_height">
 
     <View
@@ -21,9 +21,9 @@
         android:layout_marginStart="@dimen/spacing_small"
         android:layout_marginTop="@dimen/spacing_normal"
         android:paddingEnd="@dimen/spacing_large"
-        android:textColor="@color/blue_dark"
+        android:textColor="@color/gray_500"
         android:textSize="@dimen/default_text_size_normal"
-        android:textStyle="bold"
+        tools:text="xKindredd21\u20222 days ago"
         app:layout_constraintStart_toEndOf="@+id/depth_marker"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_goneMarginStart="@dimen/spacing_small" />
@@ -37,6 +37,7 @@
         android:paddingEnd="@dimen/spacing_large"
         android:textColor="@color/white"
         android:textSize="@dimen/default_text_size_small"
+        tools:text="Sample body"
         app:layout_constraintStart_toEndOf="@id/depth_marker"
         app:layout_constraintTop_toBottomOf="@id/info_text_view"
         app:layout_goneMarginStart="@dimen/spacing_small" />
@@ -46,7 +47,7 @@
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="@dimen/spacing_normal"
-        android:background="@color/black"
+        android:background="@color/gray_500"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
