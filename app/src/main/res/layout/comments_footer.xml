@@ -3,12 +3,13 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <Button
+    <ImageButton
+        style="@style/OnScreenIcons"
         android:id="@+id/btn_load_more_comments"
-        android:text="@string/btn_load_more_label"
-        android:gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_expand_more_white_36dp"/>
 
     <ProgressBar
         android:id="@+id/progress_bar"

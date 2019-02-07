@@ -28,6 +28,21 @@ public class KeywordsPreference implements KeywordsDataSource {
     }
 
     @Override
+    public boolean addKeyword(String subreddit, String keyword) {
+        String subredditKey = getKeywordsKey(subreddit);
+        Gson gson = new Gson();
+        Set<String> keywords = new LinkedHashSet<>(getKeywords(subreddit));
+
+        if (keywords.add(keyword)) {
+            String json = gson.toJson(keywords);
+            mEditor.putString(subredditKey, json);
+            return mEditor.commit();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public List<String> getKeywords(String subreddit) {
         String subredditKey = getKeywordsKey(subreddit);
         Gson gson = new Gson();
@@ -41,21 +56,6 @@ public class KeywordsPreference implements KeywordsDataSource {
         }
 
         return keywords;
-    }
-
-    @Override
-    public boolean addKeyword(String subreddit, String keyword) {
-        String subredditKey = getKeywordsKey(subreddit);
-        Gson gson = new Gson();
-        Set<String> keywords = new LinkedHashSet<>(getKeywords(subreddit));
-
-        if (keywords.add(keyword)) {
-            String json = gson.toJson(keywords);
-            mEditor.putString(subredditKey, json);
-            return mEditor.commit();
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -75,6 +75,12 @@ public class KeywordsPreference implements KeywordsDataSource {
     public void clearKeywords(String subreddit) {
         String subredditKey = getKeywordsKey(subreddit);
         mEditor.remove(subredditKey);
+        mEditor.commit();
+    }
+
+    @Override
+    public void clearAllKeywords() {
+        mEditor.clear();
         mEditor.commit();
     }
 

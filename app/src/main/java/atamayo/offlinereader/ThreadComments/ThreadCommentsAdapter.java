@@ -11,7 +11,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -35,80 +35,124 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<RedditComment> mCommentsList;
-    private int mNumRecentlyLoaded;
-    private OnLoadMoreItems mLoadMoreCallback;
-    private RedditThread mThread;
     private static final int VIEW_HEADER = R.layout.comments_header;
     private static final int VIEW_FOOTER = R.layout.comments_footer;
     private static final int VIEW_ITEM = R.layout.comments_list_item;
+
+    private List<RedditComment> mComments;
+    private OnLoadMoreItems mLoadMoreCallback;
+    private RedditThread mThread;
     private Context mContext;
-    private boolean shouldShowLoading;
+    private boolean showProgressBar;
 
     public ThreadCommentsAdapter(List<RedditComment> comments, OnLoadMoreItems callback, Context context) {
-        mCommentsList = comments;
-        mNumRecentlyLoaded = 0;
+        mComments = comments;
         mLoadMoreCallback = callback;
         mContext = context;
     }
 
     public class ThreadViewHolder extends RecyclerView.ViewHolder {
         @Nullable
-        @BindView(R.id.title_view)
-        TextView titleView;
+        @BindView(R.id.title_view) TextView mTitleView;
         @Nullable
-        @BindView(R.id.time_author_view)
-        TextView timeAuthorView;
+        @BindView(R.id.time_author_view) TextView mTimeAuthorView;
         @Nullable
-        @BindView(R.id.image)
-        ImageView imageView;
+        @BindView(R.id.image) ImageView mImageView;
         @Nullable
-        @BindView(R.id.self_text_view)
-        TextView selftextView;
-        @BindColor(R.color.white)
-        int defaultColor;
-        @BindColor(R.color.red_500)
-        int clickedColor;
+        @BindView(R.id.self_text_view) TextView mSelfTextView;
+        @BindColor(R.color.white) int mDefaultColor;
+        @BindColor(R.color.red_500) int mClickedColor;
 
         public ThreadViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
+
+        public void bind(RedditThread thread) {
+            mTitleView.setText(thread.getTitle());
+            mTitleView.setTextColor(mClickedColor);
+
+            String timeAuthor = thread.getFormattedTime() + " by " + thread.getAuthor();
+            mTimeAuthorView.setText(timeAuthor);
+
+            String selftextHtml = thread.getSelftextHtml();
+            if (TextUtils.isEmpty(selftextHtml)) {
+                mSelfTextView.setVisibility(View.GONE);
+            } else {
+                mSelfTextView.setVisibility(View.VISIBLE);
+                Spanned html = fromHtml(selftextHtml);
+                mSelfTextView.setText(trim(html, 0, html.length()));
+            }
+
+            if (mImageView.getVisibility() == View.GONE) {
+                mImageView.setVisibility(View.VISIBLE);
+                Glide.with(mContext).load(thread.getMediaPath())
+                        .fitCenter()
+                        .crossFade()
+                        .into(mImageView);
+            }
+        }
     }
 
     public class CommentViewHolder extends RecyclerView.ViewHolder {
         @Nullable
-        @BindView(R.id.depth_marker)
-        View depthMarker;
+        @BindView(R.id.depth_marker) View mDepthMarker;
         @Nullable
-        @BindView(R.id.info_text_view)
-        TextView infoView;
+        @BindView(R.id.info_text_view) TextView mInfoView;
         @Nullable
-        @BindView(R.id.comment_body_view)
-        TextView commentBodyView;
+        @BindView(R.id.comment_body_view) TextView mCommentBodyView;
         @Nullable
-        @BindView(R.id.divider)
-        View divider;
-        @BindDimen(R.dimen.depth_marker_width)
-        float depthMarkerWidth;
-        @BindArray(R.array.depth_colors)
-        int[] colors;
+        @BindView(R.id.divider) View mDivider;
+        @BindDimen(R.dimen.depth_marker_width) float mDepthMarkerWidth;
+        @BindArray(R.array.depth_colors) int[] mColors;
 
         public CommentViewHolder(View view) {
             super(view);
 
             ButterKnife.bind(this, view);
         }
+
+        public void bind(RedditComment comment, boolean showDivider) {
+            String points = Integer.toString(comment.getScore()) + " points";
+            String time = comment.getFormattedTime();
+            String info = comment.getAuthor() + " \u2022 " + points + " \u2022 " + time;
+            mInfoView.setText(info);
+
+            String bodyHtml = comment.getBodyHtml();
+            if (!TextUtils.isEmpty(bodyHtml)) {
+                Spanned spanned = fromHtml(comment.getBodyHtml());
+                mCommentBodyView.setText(trim(spanned, 0, spanned.length()));
+            } else {
+                mCommentBodyView.setText(bodyHtml);
+            }
+
+            if (showDivider) {
+                mDivider.setVisibility(View.GONE);
+            } else {
+                mDivider.setVisibility(View.VISIBLE);
+            }
+
+            int paddingStart = 0;
+            if (comment.getDepth() > 0) {
+                mDepthMarker.setVisibility(View.VISIBLE);
+                paddingStart = Math.round(mDepthMarkerWidth) * (comment.getDepth() - 1);
+            } else {
+                mDepthMarker.setVisibility(View.GONE);
+            }
+            itemView.setPadding(paddingStart, 0, 0, 0);
+
+            int colorIndex = comment.getDepth() % mColors.length;
+            int depthMarkerColor = mColors[colorIndex];
+            mDepthMarker.setBackgroundColor(depthMarkerColor);
+        }
     }
 
     public class FooterViewHolder extends RecyclerView.ViewHolder {
         @Nullable
-        @BindView(R.id.btn_load_more_comments)
-        Button btnLoadMore;
+        @BindView(R.id.btn_load_more_comments) ImageButton mBtnLoadMore;
         @Nullable
-        @BindView(R.id.progress_bar)
-        ProgressBar progressBar;
+        @BindView(R.id.progress_bar) ProgressBar mProgressBar;
 
         public FooterViewHolder(View view) {
             super(view);
@@ -119,6 +163,16 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         @OnClick(R.id.btn_load_more_comments)
         public void onLoadMoreClicked(View view) {
             mLoadMoreCallback.loadMore();
+        }
+
+        public void bind(boolean showProgressBar) {
+            if (showProgressBar) {
+                mBtnLoadMore.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.VISIBLE);
+            } else {
+                mProgressBar.setVisibility(View.GONE);
+                mBtnLoadMore.setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -142,16 +196,15 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         switch (holder.getItemViewType()) {
             case VIEW_HEADER:
-                ThreadViewHolder threadViewHolder = (ThreadViewHolder) holder;
-                configureHeaderView(threadViewHolder);
+                if (mThread != null) {
+                    ((ThreadViewHolder) holder).bind(mThread);
+                }
                 break;
             case VIEW_ITEM:
-                CommentViewHolder commentViewHolder = (CommentViewHolder) holder;
-                configureCommentViews(commentViewHolder, position - 1);
+                ((CommentViewHolder) holder).bind(mComments.get(position - 1), (position == getItemCount()));
                 break;
             case VIEW_FOOTER:
-                FooterViewHolder footerViewHolder = (FooterViewHolder) holder;
-                configureFooterView(footerViewHolder);
+                ((FooterViewHolder) holder).bind(showProgressBar);
                 break;
             default:
                 break;
@@ -162,123 +215,38 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public int getItemCount() {
         //We added a header and a footer so we have 2 extra items aside
         //from our comments list
-        return mCommentsList.size() + 2;
-    }
-
-    @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
-        super.onAttachedToRecyclerView(recyclerView);
+        return mComments.size() + 2;
     }
 
     @Override
     public int getItemViewType(int position) {
         if (position == 0) {
             return VIEW_HEADER;
-        } else if (position == mCommentsList.size() + 1) {
+        } else if (position == mComments.size() + 1) {
             return VIEW_FOOTER;
         } else {
             return VIEW_ITEM;
         }
     }
 
-    private void configureHeaderView(ThreadViewHolder holder) {
-        if (mThread != null) {
-            holder.titleView.setText(mThread.getTitle());
-            holder.titleView.setTextColor(holder.clickedColor);
-
-            String timeAuthor = mThread.getFormattedTime() + " by " + mThread.getAuthor();
-            holder.timeAuthorView.setText(timeAuthor);
-
-            String selftextHtml = mThread.getSelftextHtml();
-            if (TextUtils.isEmpty(selftextHtml)) {
-                holder.selftextView.setVisibility(View.GONE);
-            } else {
-                holder.selftextView.setVisibility(View.VISIBLE);
-                Spanned html = fromHtml(selftextHtml);
-                holder.selftextView.setText(trim(html, 0, html.length()));
-            }
-
-            if (holder.imageView.getVisibility() == View.GONE) {
-                holder.imageView.setVisibility(View.VISIBLE);
-                Glide.with(mContext).load(mThread.getMediaPath())
-                        .fitCenter()
-                        .crossFade()
-                        .into(holder.imageView);
-            }
-        }
-    }
-
-    private void configureCommentViews(CommentViewHolder holder, int position) {
-        RedditComment comment = mCommentsList.get(position);
-
-        String points = Integer.toString(comment.getScore()) + " points";
-        String time = comment.getFormattedTime();
-        String info = comment.getAuthor() + " \u2022 " + points + " \u2022 " + time;
-        holder.infoView.setText(info);
-
-        String bodyHtml = comment.getBodyHtml();
-        if (!TextUtils.isEmpty(bodyHtml)) {
-            Spanned spanned = fromHtml(comment.getBodyHtml());
-            holder.commentBodyView.setText(trim(spanned, 0, spanned.length()));
-        } else {
-            holder.commentBodyView.setText(bodyHtml);
-        }
-
-        if (position == getItemCount()) {
-            holder.divider.setVisibility(View.GONE);
-        } else {
-            holder.divider.setVisibility(View.VISIBLE);
-        }
-
-        int paddingStart = 0;
-        if (comment.getDepth() > 0) {
-            holder.depthMarker.setVisibility(View.VISIBLE);
-            paddingStart = Math.round(holder.depthMarkerWidth) * (comment.getDepth() - 1);
-        } else {
-            holder.depthMarker.setVisibility(View.GONE);
-        }
-        holder.itemView.setPadding(paddingStart, 0, 0, 0);
-
-        int colorIndex = comment.getDepth() % holder.colors.length;
-        int depthMarkerColor = holder.colors[colorIndex];
-        holder.depthMarker.setBackgroundColor(depthMarkerColor);
-    }
-
-    private void configureFooterView(FooterViewHolder holder) {
-        if (shouldShowLoading) {
-            holder.progressBar.setVisibility(View.VISIBLE);
-            holder.btnLoadMore.setVisibility(View.GONE);
-        } else {
-            holder.progressBar.setVisibility(View.GONE);
-
-            if (mNumRecentlyLoaded > 0) {
-                holder.btnLoadMore.setVisibility(View.VISIBLE);
-            } else {
-                holder.btnLoadMore.setVisibility(View.GONE);
-            }
-        }
-    }
-
     public void addThread(RedditThread thread) {
         mThread = thread;
+        notifyItemChanged(0);
     }
 
-    public void replaceData(List<RedditComment> newList) {
-        mNumRecentlyLoaded = newList.size();
-        mCommentsList.clear();
-        mCommentsList.addAll(newList);
-        notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
+    public void submitList(List<RedditComment> newList) {
+        mComments.clear();
+        mComments.addAll(newList);
+        notifyItemRangeChanged(1, mComments.size());
     }
 
-    public void addData(List<RedditComment> moreComments) {
-        mNumRecentlyLoaded = moreComments.size();
-        mCommentsList.addAll(moreComments);
-        notifyItemRangeInserted(mCommentsList.size() + 1, mNumRecentlyLoaded);
+    public int getDataSize() {
+        return mComments.size();
     }
 
     public void showLoading(boolean isLoading) {
-        shouldShowLoading = isLoading;
-        notifyItemChanged(mCommentsList.size() + 1);
+        showProgressBar = isLoading;
+        notifyItemChanged(mComments.size() + 1);
     }
 
     private Spanned fromHtml(String htmlText) {

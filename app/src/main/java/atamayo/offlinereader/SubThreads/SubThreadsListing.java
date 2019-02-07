@@ -1,9 +1,8 @@
 package atamayo.offlinereader.SubThreads;
 
-import android.os.Parcelable;
+import android.arch.lifecycle.ViewModelProviders;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -12,28 +11,27 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.squareup.leakcanary.RefWatcher;
 
 import java.util.ArrayList;
-import java.util.List;
 
+import androidx.navigation.fragment.NavHostFragment;
 import atamayo.offlinereader.App;
+import atamayo.offlinereader.ConfirmDialog;
+import atamayo.offlinereader.ConfirmDialogListener;
 import atamayo.offlinereader.Data.SubredditsDataSource;
-import atamayo.offlinereader.Data.SubredditsRepository;
 import atamayo.offlinereader.R;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
-import atamayo.offlinereader.RedditDAO.DaoSession;
 import atamayo.offlinereader.SubredditService;
-import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
 import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import atamayo.offlinereader.Utils.Schedulers.AppScheduler;
@@ -46,84 +44,47 @@ import butterknife.Unbinder;
  * the user to the comments page for that thread.
  */
 public class SubThreadsListing extends Fragment
-        implements SubThreadsContract.View, ThreadListCallbacks,
-        OnLoadMoreItems {
-
+        implements ThreadListCallbacks,
+                OnLoadMoreItems,
+                ConfirmDialogListener {
     public static final String TAG = "SubThreadsListing";
-    public static final String SUBREDDIT = "Subreddit";
-    private static final String LIST_STATE = "Liststate";
-    private static final String NUM_REQUESTED_THREADS = "NumRequestedThreads";
+    public static final String SUBREDDIT_DISPLAY_NAME = "Subreddit";
     private static final int ITEMS_PER_PAGE = 10;
-    private Unbinder unbinder;
+    private static final String EMPTY_THREADS_MESSAGE = "No threads to show";
+
+    @BindView(R.id.sub_threads_list) RecyclerView mSubThreadsList;
+    @BindView(R.id.error_msg) TextView mErrorMessage;
+    @BindView(R.id.toolbar) Toolbar mToolbar;
+    @BindView(R.id.title) TextView mTitle;
+    @BindView(R.id.refresh_list_layout) SwipeRefreshLayout mRefresh;
+    @BindView(R.id.threads_progress_bar) ProgressBar mProgressBar;
+
+    private Unbinder mUnbinder;
     private SubThreadsAdapter mAdapter;
-    private SubThreadsPresenter mPresenter;
-    private OnThreadSelectedListener onThreadSelectedListener;
-    private Parcelable mListState;
-    private int mNumRequestedThreads;
-
-    @BindView(R.id.sub_threads_list)
-    RecyclerView mSubThreadsList;
-    @BindView(R.id.error_msg)
-    TextView mErrorMessage;
-    @BindView(R.id.toolbar)
-    Toolbar mToolbar;
-    @BindView(R.id.title)
-    TextView mTitle;
-    @BindView(R.id.refresh_list_layout)
-    SwipeRefreshLayout mRefresh;
-
-    public interface OnThreadSelectedListener {
-        void launchCommentsPage(Bundle args);
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        try {
-            onThreadSelectedListener = (OnThreadSelectedListener) context;
-        } catch (ClassCastException e) {
-            Log.e(TAG, e.toString());
-        }
-    }
+    private SubThreadsViewModel mViewModel;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
 
-        Bundle args = getArguments();
-        String subredditName = args != null ? args.getString(SUBREDDIT, "")
-                : "";
-
-        DaoSession daoSession = ((App) (getActivity().getApplication())).getDaoSession();
-        FileManager commentFileManager = new FileManager(getActivity());
-        SubredditsDataSource repository = new SubredditsRepository(daoSession.getRedditThreadDao(),
-                daoSession.getSubredditDao(), commentFileManager);
-        mPresenter = new SubThreadsPresenter(subredditName, repository, new AppScheduler());
+        SubredditsDataSource repository = ((App) getActivity().getApplication()).getSubredditsRepository();
+        String subredditDisplayName = getArguments().getString(SUBREDDIT_DISPLAY_NAME);
+        SubThreadsViewModelFactory factory = new SubThreadsViewModelFactory(repository, new AppScheduler(), subredditDisplayName, ITEMS_PER_PAGE);
+        mViewModel = ViewModelProviders.of(this, factory).get(SubThreadsViewModel.class);
         mAdapter = new SubThreadsAdapter(new ArrayList<>(), this, this);
 
-        if (savedInstanceState != null) {
-            mListState = savedInstanceState.getParcelable(LIST_STATE);
-            mNumRequestedThreads = savedInstanceState.getInt(NUM_REQUESTED_THREADS, ITEMS_PER_PAGE);
-        } else {
-            mNumRequestedThreads = ITEMS_PER_PAGE;
-        }
+        setObservers();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_sub_threads, container, false);
 
-        unbinder = ButterKnife.bind(this, view);
-
-        Bundle bundle = getArguments();
-        final String subreddit = (bundle != null && bundle.getString(SUBREDDIT) != null)
-                ? bundle.getString(SUBREDDIT) : "";
+        mUnbinder = ButterKnife.bind(this, view);
 
         ((AppCompatActivity) getActivity()).setSupportActionBar(mToolbar);
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayShowTitleEnabled(false);
-        mTitle.setText(subreddit);
 
         mSubThreadsList.setLayoutManager(new LinearLayoutManager(getActivity()));
         mSubThreadsList.setAdapter(mAdapter);
@@ -132,44 +93,24 @@ public class SubThreadsListing extends Fragment
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
         itemTouchHelper.attachToRecyclerView(mSubThreadsList);
 
-        mRefresh.setOnRefreshListener(() ->
-                mPresenter.getThreads(true, 0, ITEMS_PER_PAGE));
+        mRefresh.setOnRefreshListener(() -> mViewModel.getThreads(ITEMS_PER_PAGE));
+
+        String subredditDisplayName = getArguments().getString(SUBREDDIT_DISPLAY_NAME);
+        String title = subredditDisplayName != null ? subredditDisplayName : "subreddit";
+        mTitle.setText(title);
 
         return view;
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mPresenter.attachView(this);
-        mPresenter.getThreads(true, 0, mNumRequestedThreads);
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
-
-        mListState = mSubThreadsList.getLayoutManager().onSaveInstanceState();
-        mPresenter.detachView();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelable(LIST_STATE, mListState);
-        outState.putInt(NUM_REQUESTED_THREADS, mAdapter.getNumberOfThreads());
-
-        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        unbinder.unbind();
+        mUnbinder.unbind();
     }
 
     @Override
@@ -188,10 +129,10 @@ public class SubThreadsListing extends Fragment
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_download:
-                mPresenter.downloadThreads();
+                mViewModel.getCurrentSubreddit();
                 return true;
             case R.id.action_delete:
-                mPresenter.removeAllThreads();
+                mViewModel.clearThreads();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -199,73 +140,77 @@ public class SubThreadsListing extends Fragment
     }
 
     @Override
-    public void showInitialThreads(List<RedditThread> threads) {
-        mRefresh.setRefreshing(false);
-
-        mAdapter.replaceData(threads);
-
-        mSubThreadsList.setVisibility(View.VISIBLE);
-        mErrorMessage.setVisibility(View.GONE);
-
-        if (mListState != null) {
-            mSubThreadsList.getLayoutManager().onRestoreInstanceState(mListState);
-            mListState = null;
-        }
-    }
-
-    @Override
-    public void showMoreThreads(List<RedditThread> threads) {
-        mAdapter.addData(threads);
-    }
-
-    @Override
-    public void showEmptyThreads() {
-        mSubThreadsList.setVisibility(View.GONE);
-        mErrorMessage.setVisibility(View.VISIBLE);
-        mErrorMessage.setText("No threads to show");
-        mRefresh.setRefreshing(false);
-    }
-
-    @Override
-    public void showLoading(boolean isLoading) {
-        mAdapter.showLoading(isLoading);
-    }
-
-    @Override
-    public void showCommentsPage(String threadFullName) {
-        Bundle args = new Bundle();
-        args.putString(ThreadCommentsListing.THREAD_FULL_NAME, threadFullName);
-
-        onThreadSelectedListener.launchCommentsPage(args);
-    }
-
-    @Override
-    public void startDownloadService(List<String> subreddits) {
-        Intent intent = new Intent(getActivity(), SubredditService.class);
-        intent.putExtra(SubredditService.EXTRA_SUBREDDIT, (ArrayList<String>) subreddits);
-        getActivity().startService(intent);
-
-        Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void showMessage(String message) {
-        Snackbar.make(getActivity().findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show();
-    }
-
-    @Override
     public void OnOpenCommentsPage(RedditThread thread) {
-        mPresenter.openCommentsPage(thread);
+        mViewModel.updateSelectedThread(thread);
+        Bundle bundle = new Bundle();
+        bundle.putString(ThreadCommentsListing.THREAD_FULL_NAME, thread.getFullName());
+        NavHostFragment.findNavController(this).navigate(R.id.action_subThreads_dest_to_threadComments_dest, bundle);
     }
 
     @Override
     public void OnDeleteThread(RedditThread thread) {
-        mPresenter.removeThread(thread);
+        mViewModel.removeThread(thread);
     }
 
     @Override
+    public void onConfirmClick(String action) {}
+
+    @Override
     public void loadMore() {
-        mPresenter.getThreads(false, mAdapter.getNumberOfThreads(), ITEMS_PER_PAGE);
-        mNumRequestedThreads += ITEMS_PER_PAGE;
+        showLoading(true);
+        mViewModel.getThreads(mAdapter.getDataSize() + ITEMS_PER_PAGE);
+    }
+
+    private void setObservers() {
+        mViewModel.getRedditThreadsObservable().observe(this, redditThreads -> {
+            if (!redditThreads.isEmpty()) {
+                mAdapter.submitList(redditThreads);
+            } else {
+                showEmptyThreads();
+            }
+            showLoading(false);
+        });
+
+        mViewModel.getMessageObservable().observe(this, message -> {
+            showMessageDialog("", message, "");
+            showLoading(false);
+        });
+
+        mViewModel.getSubredditObservable().observe(this, subreddit -> {
+            ArrayList<String> subreddits = new ArrayList<>();
+            subreddits.add(subreddit);
+            startDownloadService(subreddits);
+        });
+    }
+
+    private void showLoading(boolean isLoading) {
+        if (isLoading) {
+            mAdapter.showLoading(true);
+        } else {
+            mAdapter.showLoading(false);
+            mRefresh.setRefreshing(false);
+            mProgressBar.setVisibility(View.GONE);
+        }
+    }
+
+    private void startDownloadService(ArrayList<String> subreddits) {
+        Intent intent = new Intent(getActivity(), SubredditService.class);
+        intent.putExtra(SubredditService.EXTRA_SUBREDDIT, subreddits);
+        getActivity().startService(intent);
+
+        Snackbar.make(getActivity().findViewById(android.R.id.content), "Download started", Snackbar.LENGTH_LONG).show();
+    }
+
+    private void showMessageDialog(String title, String message, String action) {
+        ConfirmDialog dialog = ConfirmDialog.newInstance(title, message, action);
+        dialog.setTargetFragment(this, 0);
+        dialog.show(getFragmentManager(), "DIALOG");
+    }
+
+    private void showEmptyThreads() {
+        mSubThreadsList.setVisibility(View.GONE);
+        mErrorMessage.setVisibility(View.VISIBLE);
+        mErrorMessage.setText(EMPTY_THREADS_MESSAGE);
+        mRefresh.setRefreshing(false);
     }
 }

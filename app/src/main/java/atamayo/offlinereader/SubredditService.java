@@ -1,10 +1,12 @@
 package atamayo.offlinereader;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -17,26 +19,25 @@ import java.util.concurrent.TimeUnit;
 import atamayo.offlinereader.Data.KeywordsDataSource;
 import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.KeywordsPreference;
-import atamayo.offlinereader.Data.SubredditsRepository;
-import atamayo.offlinereader.RedditDAO.DaoSession;
-import atamayo.offlinereader.Data.FileManager;
 import atamayo.offlinereader.Utils.RedditDownloader;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class SubredditService extends Service {
+    private final static int FOREGROUND_ID = 12148;
+    private final static int NOTIF_ID = 12149;
+    private final static String CHANNEL_ID = "OfflineReader Notifications";
     private final static String TAG = "Subreddit_Service";
     public final static String EXTRA_SUBREDDIT = "subreddit";
+
     private SubredditsDataSource mRepository;
     private KeywordsDataSource mKeywords;
     private NotificationCompat.Builder mNotificationBuilder;
     private NotificationManager mNotificationManager;
-    private RedditDownloader redditDownloader;
-    private CompositeDisposable compositeDisposable;
-    private int runningTasks;
-    private final static int FOREGROUND_ID = 12148;
-    private final static int NOTIF_ID = 12149;
+    private RedditDownloader mRedditDownloader;
+    private CompositeDisposable mDisposable;
+    private int mRunningTasks;
 
     public SubredditService(){
     }
@@ -44,19 +45,19 @@ public class SubredditService extends Service {
     @Override
     public void onCreate(){
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        mNotificationBuilder = new NotificationCompat.Builder(this)
+        //Must be called before initializing notification builder
+        createNotificationChannel();
+        mNotificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
                 .setAutoCancel(true);
 
-        DaoSession daoSession = ((App) getApplication()).getDaoSession();
-        mRepository = new SubredditsRepository(daoSession.getRedditThreadDao(),
-                daoSession.getSubredditDao(), new FileManager(this));
+        mRepository = ((App) getApplication()).getSubredditsRepository();
         mKeywords = new KeywordsPreference(this);
-        redditDownloader = new RedditDownloader(this);
+        mRedditDownloader = new RedditDownloader(this);
 
-        compositeDisposable = new CompositeDisposable();
-        runningTasks = 0;
+        mDisposable = new CompositeDisposable();
+        mRunningTasks = 0;
     }
 
     @Nullable
@@ -68,30 +69,32 @@ public class SubredditService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //Keep track of running tasks so we know when to stop
-        ++runningTasks;
-        startForegroundNotif();
+        if (mRunningTasks == 0) {
+            startForeground(FOREGROUND_ID, getForegroundNotification());
+        }
+        ++mRunningTasks;
 
         List<String> subsToDownload = intent.getStringArrayListExtra(EXTRA_SUBREDDIT);
-
-        if (subsToDownload != null) {
+        if (subsToDownload != null && !subsToDownload.isEmpty()) {
             for (final String subreddit : subsToDownload) {
                 List<String> keywords = new ArrayList<>(mKeywords.getKeywords(subreddit));
-                compositeDisposable.add(redditDownloader.getThreads(subreddit, keywords)
+                mDisposable.add(mRedditDownloader.getThreads(subreddit, keywords)
                         .subscribeOn(Schedulers.single())
-                        .flatMap(redditThreads -> Observable.fromIterable(redditThreads))
+                        .toObservable()
+                        .flatMap(Observable::fromIterable)
                         .concatMap(redditThread ->
                                 Observable.just(redditThread)
                                         .delay(2, TimeUnit.SECONDS))
                         .doOnNext(redditThread ->
-                                redditThread.setImageBytes(redditDownloader.downloadImage(redditThread, 216, 384).blockingFirst(new byte[]{})))
-                        .filter(redditThread -> mRepository.addRedditThread(redditThread))
+                                redditThread.setImageBytes(mRedditDownloader.downloadImage(redditThread, 216, 384).blockingGet()))
+                        .filter(mRepository::addRedditThread)
                         .map(redditThread ->
-                                Pair.create(redditThread, redditDownloader.getComments(redditThread.getSubreddit(), redditThread.getThreadId())))
-                        .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingFirst("")),
+                                Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(), redditThread.getThreadId())))
+                        .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingGet()),
                                 this::processError,
                                 this::processCompletedTask));
             }
-        }else{
+        } else {
             stopSelf();
         }
 
@@ -100,7 +103,7 @@ public class SubredditService extends Service {
 
     @Override
     public void onDestroy() {
-        compositeDisposable.dispose();
+        mDisposable.dispose();
 
         super.onDestroy();
     }
@@ -112,7 +115,7 @@ public class SubredditService extends Service {
         Notification notification = mNotificationBuilder
                 .setContentIntent(getMainActivityIntent())
                 .setProgress(0, 0, false)
-                .setContentText("Error occured. Some threads may not have been downloaded")
+                .setContentText("Some threads may not have been downloaded")
                 .build();
 
         mNotificationManager.notify(NOTIF_ID, notification);
@@ -130,7 +133,7 @@ public class SubredditService extends Service {
          * if there are still tasks running so we know whether or not we should
          * send the notification and stop the service.
          */
-        if(--runningTasks == 0) {
+        if(--mRunningTasks == 0) {
             Notification notification = mNotificationBuilder
                     .setContentIntent(getMainActivityIntent())
                     .setProgress(0, 0, false)
@@ -143,16 +146,17 @@ public class SubredditService extends Service {
     }
 
     /**
-     * Builds the ongoing notification and runs this service
-     * in the foreground
+     * Builds and returns the notification that allows user to see
+     * an indeterminate progress of the downloads
+     *
+     * @return
      */
-    private void startForegroundNotif(){
-        Notification notification = mNotificationBuilder
+    private Notification getForegroundNotification(){
+        return mNotificationBuilder
                 .setContentIntent(getMainActivityIntent())
                 .setProgress(0, 0, true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .build();
-
-        startForeground(FOREGROUND_ID, notification);
     }
 
     /**
@@ -162,6 +166,20 @@ public class SubredditService extends Service {
     private PendingIntent getMainActivityIntent(){
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         intent.putExtra(MainActivity.FRAGMENT_EXTRA, "SubredditsListing");
+        intent.setAction(Long.toString(System.currentTimeMillis()));
         return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Reddit";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            String description = "Notifications for OfflineReader";
+
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            mNotificationManager.createNotificationChannel(channel);
+        }
     }
 }

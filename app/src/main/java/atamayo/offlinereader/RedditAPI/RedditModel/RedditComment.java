@@ -3,7 +3,6 @@ package atamayo.offlinereader.RedditAPI.RedditModel;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import org.greenrobot.greendao.annotation.Index;
 
 public class RedditComment extends RedditObject {
 
@@ -38,7 +37,6 @@ public class RedditComment extends RedditObject {
 
     @Expose
     @SerializedName("name")
-    @Index(unique = true)
     String commentFullname;
 
     @Expose

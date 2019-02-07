@@ -9,10 +9,11 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class YesNoDialog extends DialogFragment {
+    public static final String TAG = "YesNoDialog";
     private YesNoDialogListener mCallback;
-    private final static String YESNO_DIALOG_TITLE = "title";
-    private final static String YESNO_DIALOG_MESSAGE = "message";
-    private final static String YESNO_DIALOG_ACTION = "action";
+    private static final String YESNO_DIALOG_TITLE = "title";
+    private static final String YESNO_DIALOG_MESSAGE = "message";
+    private static final String YESNO_DIALOG_ACTION = "action";
 
     public static YesNoDialog newInstance(String title, String message, String action){
         YesNoDialog dialog = new YesNoDialog();

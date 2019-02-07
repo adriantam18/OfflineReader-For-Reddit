@@ -9,10 +9,11 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class ConfirmDialog extends DialogFragment {
+    public static final String TAG = "ConfirmDialog";
     private ConfirmDialogListener  mCallback;
-    private final static String CONFIRM_DIALOG_TITLE = "title";
-    private final static String CONFIRM_DIALOG_MESSAGE = "message";
-    private final static String CONFIRM_DIALOG_ACTION = "action";
+    private static final String CONFIRM_DIALOG_TITLE = "title";
+    private static final String CONFIRM_DIALOG_MESSAGE = "message";
+    private static final String CONFIRM_DIALOG_ACTION = "action";
 
     public static ConfirmDialog newInstance(String title, String message, String action){
         ConfirmDialog dialog = new ConfirmDialog();

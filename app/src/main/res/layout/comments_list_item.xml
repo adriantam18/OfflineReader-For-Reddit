@@ -16,30 +16,32 @@
 
     <TextView
         android:id="@+id/info_text_view"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_small"
+        android:layout_marginEnd="@dimen/spacing_small"
         android:layout_marginTop="@dimen/spacing_normal"
-        android:paddingEnd="@dimen/spacing_large"
         android:textColor="@color/gray_500"
         android:textSize="@dimen/default_text_size_normal"
         tools:text="xKindredd21\u20222 days ago"
-        app:layout_constraintStart_toEndOf="@+id/depth_marker"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/depth_marker"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_goneMarginStart="@dimen/spacing_small" />
 
     <TextView
         android:id="@+id/comment_body_view"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_small"
+        android:layout_marginEnd="@dimen/spacing_small"
         android:layout_marginTop="@dimen/spacing_small"
-        android:paddingEnd="@dimen/spacing_large"
         android:textColor="@color/white"
         android:textSize="@dimen/default_text_size_small"
         tools:text="Sample body"
-        app:layout_constraintStart_toEndOf="@id/depth_marker"
         app:layout_constraintTop_toBottomOf="@id/info_text_view"
+        app:layout_constraintStart_toEndOf="@id/depth_marker"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_goneMarginStart="@dimen/spacing_small" />
 
     <View

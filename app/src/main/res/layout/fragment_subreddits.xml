@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <include
         android:id="@+id/toolbar"
         layout="@layout/toolbar" />
 
     <ProgressBar
-        android:id="@+id/loadingView"
+        android:id="@+id/loading_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/user_input"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@id/toolbar"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:minHeight="@dimen/user_input_min_height"
         android:orientation="horizontal"
         android:padding="@dimen/spacing_small">
@@ -47,17 +53,24 @@
     </LinearLayout>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/contentView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/user_input"
+        android:id="@+id/content_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/user_input"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:dividerHeight="2dp"
         android:transcriptMode="alwaysScroll" />
 
     <TextView
-        android:id="@+id/errorView"
+        android:id="@+id/error_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:textSize="@dimen/default_text_size_large" />
 
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

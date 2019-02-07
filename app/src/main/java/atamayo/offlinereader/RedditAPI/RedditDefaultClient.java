@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder;
 
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -29,16 +30,16 @@ public class RedditDefaultClient {
 
     private static Retrofit retrofit = builder.build();
 
-    public static <S> S createClass(Class<S> service){
-        return retrofit.create(service);
-    }
-
     public static <S> S createClass(Class<S> service, final String auth, Context context){
         if(!TextUtils.isEmpty(auth)){
             AuthenticationInterceptor interceptor = new AuthenticationInterceptor(auth);
             ConnectionInterceptor connectionInterceptor = new ConnectionInterceptor(context);
 
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
             httpClient.addInterceptor(connectionInterceptor);
+            httpClient.addInterceptor(loggingInterceptor);
 
             if(!httpClient.interceptors().contains(interceptor)){
                 httpClient.addInterceptor(interceptor);

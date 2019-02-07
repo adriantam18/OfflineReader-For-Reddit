@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:minHeight="@dimen/one_line_list_item_min_height"
     android:padding="@dimen/spacing_normal">
 
@@ -10,8 +11,9 @@
         android:id="@+id/nsfw_marker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         android:layout_marginEnd="@dimen/spacing_small"
         android:text="@string/nsfw_marker"
         android:textColor="@color/red_500"
@@ -22,10 +24,11 @@
         android:id="@+id/subreddit_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nsfw_marker"
         android:layout_alignWithParentIfMissing="true"
-        android:layout_centerVertical="true"
         android:layout_marginEnd="@dimen/spacing_small"
-        android:layout_toEndOf="@id/nsfw_marker"
         android:textColor="@color/white"
         android:textSize="@dimen/default_text_size_large" />
 
@@ -34,10 +37,11 @@
         android:id="@+id/remove_subreddit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/remove_item"
         android:src="@drawable/ic_clear_white_24dp"
         android:tint="@color/red_500" />
 
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

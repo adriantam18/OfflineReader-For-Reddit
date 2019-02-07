@@ -1,4 +1,4 @@
-<resources>
+    <resources>
     <string name="app_name">OfflineReader For Reddit</string>
 
     <!--THREADS-->
@@ -23,4 +23,5 @@
     <string name="menu_label_keywords">Keywords</string>
     <string name="menu_label_delete_all">Delete All</string>
     <string name="menu_label_search">Search...</string>
+    <string name="menu_label_third_party">Third Party Libraries</string>
 </resources>

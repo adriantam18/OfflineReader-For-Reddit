@@ -1,5 +1,7 @@
 package atamayo.offlinereader.Keywords;
 
+import android.support.v7.recyclerview.extensions.ListAdapter;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,27 +9,34 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import java.util.List;
-
 import atamayo.offlinereader.R;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHolder> {
-    private List<String> mKeywords;
+public class KeywordsAdapter extends ListAdapter<String, KeywordsAdapter.ViewHolder> {
     private KeywordsListCallback mCallback;
 
-    public KeywordsAdapter(List<String> keywords, KeywordsListCallback callback) {
-        mKeywords = keywords;
+    public static final DiffUtil.ItemCallback<String> DIFF_CALLBACK = new DiffUtil.ItemCallback<String>() {
+        @Override
+        public boolean areItemsTheSame(String oldItem, String newItem) {
+            return oldItem.equals(newItem);
+        }
+
+        @Override
+        public boolean areContentsTheSame(String oldItem, String newItem) {
+            return oldItem.equals(newItem);
+        }
+    };
+
+    public KeywordsAdapter(KeywordsListCallback callback) {
+        super(DIFF_CALLBACK);
         mCallback = callback;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        @BindView(R.id.keyword)
-        TextView mKeyword;
-        @BindView(R.id.btn_remove_keyword)
-        ImageButton mRemoveKeyword;
+        @BindView(R.id.keyword) TextView mKeyword;
+        @BindView(R.id.btn_remove_keyword) ImageButton mRemoveKeyword;
 
         public ViewHolder(View view) {
             super(view);
@@ -37,7 +46,11 @@ public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHo
 
         @OnClick(R.id.btn_remove_keyword)
         public void removeKeyword(View view) {
-            mCallback.OnDeleteKeyword(mKeywords.get(getAdapterPosition()));
+            mCallback.OnDeleteKeyword(getItem(getAdapterPosition()));
+        }
+
+        public void bind(String keyword) {
+            mKeyword.setText(keyword);
         }
     }
 
@@ -49,21 +62,6 @@ public class KeywordsAdapter extends RecyclerView.Adapter<KeywordsAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(KeywordsAdapter.ViewHolder holder, int position) {
-        holder.mKeyword.setText(mKeywords.get(position));
-    }
-
-    @Override
-    public int getItemCount() {
-        return mKeywords.size();
-    }
-
-    public void replaceData(List<String> keywords) {
-        mKeywords = keywords;
-        notifyDataSetChanged();
-    }
-
-    public void addData(String keyword, int position) {
-        mKeywords.add(position, keyword);
-        notifyDataSetChanged();
+        holder.bind(getItem(position));
     }
 }

@@ -5,47 +5,49 @@ import android.database.sqlite.SQLiteConstraintException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.greenrobot.greendao.query.DeleteQuery;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import atamayo.offlinereader.RedditAPI.DuplicateSubredditException;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditComment;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditObject;
 import atamayo.offlinereader.RedditAPI.RedditObjectDeserializer;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
-import atamayo.offlinereader.RedditDAO.RedditThreadDao;
-import atamayo.offlinereader.RedditDAO.SubredditDao;
 
 /**
- * Implementation of SubredditsDataSource that uses a combination of GreenDao
+ * Implementation of SubredditsDataSource that uses a combination of Room
  * and Android's file system to save subreddits, threads, and comments.
  */
 public class SubredditsRepository implements SubredditsDataSource {
-    private RedditThreadDao mThreadDao;
-    private SubredditDao mSubsDao;
-    private FileManager mFileManager;
+    private static SubredditsRepository sInstance;
+    private final RedditDatabase mRedditDatabase;
+    private final FileManager mFileManager;
 
-    public SubredditsRepository(RedditThreadDao threadDao, SubredditDao subDao, FileManager fileManager){
-        mThreadDao = threadDao;
-        mSubsDao = subDao;
+    private SubredditsRepository(final RedditDatabase redditDatabase, final FileManager fileManager){
+        mRedditDatabase = redditDatabase;
         mFileManager = fileManager;
+    }
+
+    public static SubredditsRepository getInstance(final RedditDatabase redditDatabase, final FileManager fileManager) {
+        if (sInstance == null) {
+            synchronized (SubredditsRepository.class) {
+                if (sInstance == null) {
+                    sInstance = new SubredditsRepository(redditDatabase, fileManager);
+                }
+            }
+        }
+
+        return sInstance;
     }
 
     @Override
     public boolean addSubreddit(Subreddit subreddit) {
         try {
-            if(subreddit != null && subreddit.getDisplayName() != null) {
-                mSubsDao.insert(subreddit);
-                return true;
-            }else{
-                return false;
-            }
+            return (subreddit != null && subreddit.getDisplayName() != null)
+                    && (mRedditDatabase.getSubredditDao().insertSubreddit(subreddit) >= 0);
         }catch (SQLiteConstraintException e){
-            throw new DuplicateSubredditException();
+            return false;
         }
     }
 
@@ -54,8 +56,7 @@ public class SubredditsRepository implements SubredditsDataSource {
         try {
             if(thread != null && thread.getFullName() != null) {
                 thread.setMediaPath(mFileManager.writeToFile(thread.getMediaFileName(), thread.getImageBytes()));
-                mThreadDao.insertOrReplace(thread);
-                return true;
+                return mRedditDatabase.getRedditThreadDao().insertRedditThread(thread) >= 0;
             }else{
                 return false;
             }
@@ -79,37 +80,28 @@ public class SubredditsRepository implements SubredditsDataSource {
     @Override
     public void updateThread(RedditThread thread){
         if(thread != null && thread.getFullName() != null) {
-            mThreadDao.update(thread);
+            mRedditDatabase.getRedditThreadDao()
+                    .updateRedditThread(thread);
         }
     }
 
     @Override
     public Subreddit getSubreddit(String displayName){
-        if(displayName != null) {
-            return mSubsDao.queryBuilder()
-                    .where(SubredditDao.Properties.DisplayName.eq(displayName))
-                    .unique();
-        }else{
-            return null;
-        }
+        return mRedditDatabase.getSubredditDao()
+                .loadSubredditByDisplayName(displayName);
     }
 
     @Override
     public List<Subreddit> getSubreddits() {
-        return mSubsDao.queryBuilder()
-                .orderDesc(SubredditDao.Properties.Id)
-                .list();
+        return mRedditDatabase.getSubredditDao()
+                .loadSubreddits();
     }
 
     @Override
     public List<RedditThread> getRedditThreads(String subredditName, int offset, int limit) {
         if(offset >= 0 && limit >= 0 && subredditName != null) {
-            return mThreadDao.queryBuilder()
-                    .where(RedditThreadDao.Properties.Subreddit.eq(subredditName))
-                    .orderDesc(RedditThreadDao.Properties.Id)
-                    .offset(offset)
-                    .limit(limit)
-                    .list();
+            return  mRedditDatabase.getRedditThreadDao()
+                    .loadThreadsFromSubreddit(subredditName, offset, limit);
         }else{
             return new ArrayList<>();
         }
@@ -117,19 +109,13 @@ public class SubredditsRepository implements SubredditsDataSource {
 
     @Override
     public RedditThread getRedditThread(String fullname){
-        if(fullname != null) {
-            return mThreadDao.queryBuilder()
-                    .where(RedditThreadDao.Properties.FullName.eq(fullname))
-                    .unique();
-        }else{
-            return null;
-        }
+        return mRedditDatabase.getRedditThreadDao()
+                .loadRedditThreadByFullName(fullname);
     }
 
     @Override
     public List<RedditComment> getCommentsForThread(String threadFullName, int offset, int limit){
         List<RedditComment> comments = new ArrayList<>();
-
         if(offset >= 0 && limit >= 0 && threadFullName != null) {
             RedditThread thread = getRedditThread(threadFullName);
 
@@ -181,65 +167,53 @@ public class SubredditsRepository implements SubredditsDataSource {
 
     @Override
     public void deleteAllSubreddits() {
-        List<Subreddit> subreddits = mSubsDao.loadAll();
-        for (Subreddit sub : subreddits){
-            deleteAllThreadsFromSubreddit(sub.getDisplayName());
+        List<Subreddit> subreddits = mRedditDatabase.getSubredditDao()
+                .loadSubreddits();
+        for (Subreddit subreddit : subreddits){
+            deleteAllThreadsFromSubreddit(subreddit.getDisplayName());
         }
-        mSubsDao.deleteAll();
+        mRedditDatabase.getSubredditDao()
+                .deleteAllSubreddits();
     }
 
     @Override
     public void deleteSubreddit(String subredditName){
-        if(subredditName != null) {
-            deleteAllThreadsFromSubreddit(subredditName);
-            mSubsDao.queryBuilder()
-                    .where(SubredditDao.Properties.DisplayName.eq(subredditName))
-                    .buildDelete()
-                    .executeDeleteWithoutDetachingEntities();
-        }
-
+        deleteAllThreadsFromSubreddit(subredditName);
+        mRedditDatabase.getSubredditDao()
+                .deleteSubredditByDisplayName(subredditName);
     }
 
     @Override
     public void deleteAllThreadsFromSubreddit(String subredditName) {
         if(subredditName != null) {
-            List<RedditThread> threads = mThreadDao.queryBuilder()
-                    .where(RedditThreadDao.Properties.Subreddit.eq(subredditName))
-                    .orderDesc(RedditThreadDao.Properties.Id)
-                    .list();
+            List<RedditThread> threads = mRedditDatabase.getRedditThreadDao()
+                    .loadAllThreadsFromSubreddit(subredditName);
 
             for (RedditThread thread : threads) {
                 deleteAllCommentsFromThread(thread.getFullName());
                 mFileManager.deleteFile(thread.getMediaFileName());
             }
 
-            DeleteQuery deleteQuery = mThreadDao.queryBuilder()
-                    .where(RedditThreadDao.Properties.Subreddit.eq(subredditName))
-                    .buildDelete();
-            deleteQuery.executeDeleteWithoutDetachingEntities();
+            mRedditDatabase.getRedditThreadDao()
+                    .deleteThreadsFromSubreddit(subredditName);
         }
     }
 
     @Override
     public void deleteRedditThread(String threadFullname) {
-        if(threadFullname != null) {
-            RedditThread thread = getRedditThread(threadFullname);
-            mFileManager.deleteFile(thread.getMediaFileName());
-
-            deleteAllCommentsFromThread(threadFullname);
-
-            DeleteQuery deleteQuery = mThreadDao.queryBuilder()
-                    .where(RedditThreadDao.Properties.FullName.eq(threadFullname))
-                    .buildDelete();
-            deleteQuery.executeDeleteWithoutDetachingEntities();
-        }
+        deleteAllCommentsFromThread(threadFullname);
+        mRedditDatabase.getRedditThreadDao()
+                .deleteRedditThreadByFullName(threadFullname);
     }
 
     @Override
     public void deleteAllCommentsFromThread(String threadFullName){
         if(threadFullName != null) {
             RedditThread thread = getRedditThread(threadFullName);
-            mFileManager.deleteFile(thread.getCommentFileName());
+
+            if (thread != null) {
+                mFileManager.deleteFile(thread.getCommentFileName());
+            }
         }
     }
 }

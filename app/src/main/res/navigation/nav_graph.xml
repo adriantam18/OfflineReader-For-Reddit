@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/subreddits_dest">
+
+    <fragment
+        android:id="@+id/subreddits_dest"
+        android:name="atamayo.offlinereader.Subreddits.SubredditsListing"
+        android:label="fragment_subreddits"
+        tools:layout="@layout/fragment_subreddits" >
+        <action
+            android:id="@+id/action_subreddits_dest_to_subThreads_dest"
+            app:destination="@id/subThreads_dest" />
+        <action
+            android:id="@+id/action_subreddits_dest_to_keywordsListing"
+            app:destination="@id/keywordsListing" />
+    </fragment>
+    <fragment
+        android:id="@+id/subThreads_dest"
+        android:name="atamayo.offlinereader.SubThreads.SubThreadsListing"
+        android:label="fragment_sub_threads"
+        tools:layout="@layout/fragment_sub_threads" >
+        <action
+            android:id="@+id/action_subThreads_dest_to_threadComments_dest"
+            app:destination="@id/threadComments_dest" />
+    </fragment>
+    <fragment
+        android:id="@+id/threadComments_dest"
+        android:name="atamayo.offlinereader.ThreadComments.ThreadCommentsListing"
+        android:label="fragment_thread_comments"
+        tools:layout="@layout/fragment_thread_comments" />
+    <fragment
+        android:id="@+id/keywordsListing"
+        android:name="atamayo.offlinereader.Keywords.KeywordsListing"
+        android:label="activity_keywords"
+        tools:layout="@layout/fragment_keywords" />
+    <action android:id="@+id/action_global_subreddits_dest"
+        app:destination="@id/subreddits_dest"
+        app:launchSingleTop="true"
+        app:popUpTo="@+id/nav_graph"
+        app:popUpToInclusive="true" />
+</navigation>

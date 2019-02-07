@@ -30,15 +30,14 @@ import atamayo.offlinereader.RedditAPI.RedditModel.Variant;
 import atamayo.offlinereader.RedditAPI.RedditOAuthClient;
 import atamayo.offlinereader.RedditAPI.RedditOAuthService;
 import io.reactivex.Observable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.Single;
 import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 
 /**
- * This class will be responsible for querying Reddit's API to fetch
- * subreddits, threads, and comments. Clients of the class must call init()
- * before being able to make requests.
+ * This class is responsible for querying Reddit's API to fetch
+ * subreddits, threads, and comments.
  */
 public class RedditDownloader {
     private final static String TAG = "REDDIT DOWNLOADER";
@@ -66,67 +65,69 @@ public class RedditDownloader {
 
     private final static String REDDIT_OAUTH_KEY = "reddit_oauth_key";
 
-    private SharedPreferences preferences;
-    private SharedPreferences.Editor preferencesEditor;
-    private RedditDefaultService redditDefault;
-    private RedditOAuthService redditOauth;
-    private Context context;
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mPreferencesEditor;
+    private RedditDefaultService mRedditDefaultService;
+    private RedditOAuthService mRedditOAuthService;
+    private Context mContext;
 
     public RedditDownloader(Context context) {
-        this.context = context;
-        preferences = context.getSharedPreferences(REDDIT_OAUTH_KEY, Context.MODE_PRIVATE);
-        preferencesEditor = preferences.edit();
+        mContext = context;
+        mPreferences = context.getSharedPreferences(REDDIT_OAUTH_KEY, Context.MODE_PRIVATE);
+        mPreferencesEditor = mPreferences.edit();
 
         String credentials = CLIENT_ID + ":" + CLIENT_SECRET;
         String auth = BASIC + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-        redditDefault = RedditDefaultClient.createClass(RedditDefaultService.class, auth, context);
+        mRedditDefaultService = RedditDefaultClient.createClass(RedditDefaultService.class, auth, context);
 
-        redditOauth = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
+        mRedditOAuthService = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
     }
 
     /**
      * @return Bearer token string.
      */
     private String getAuthHeader() {
-        String accessToken = preferences.getString(ACCESS_TOKEN, "");
+        String accessToken = mPreferences.getString(ACCESS_TOKEN, "");
         return BEARER + accessToken;
     }
 
     /**
-     * Checks to see if access token is valid by checking if it's empty or if it has expired.
+     * Checks to see if access token needs to be refreshed by checking if it's empty or if it has expired.
+     *
      * @return true if access token needs to be refreshed, false otherwise
      */
     private boolean needsToken() {
-        return (TextUtils.isEmpty(preferences.getString(ACCESS_TOKEN, "")) ||
-                System.currentTimeMillis() > preferences.getLong(EXPIRES_IN, System.currentTimeMillis() - 1000));
+        return (TextUtils.isEmpty(mPreferences.getString(ACCESS_TOKEN, "")) ||
+                System.currentTimeMillis() > mPreferences.getLong(EXPIRES_IN, System.currentTimeMillis() - 1000));
     }
 
     /**
      * Uses the default service to retrieve an access token.
+     *
      * @return true if access token was successfully saved, false otherwise
      */
-    private Observable<Boolean> getToken() {
+    private Single<Boolean> getToken() {
         RequestBody body = new FormBody.Builder()
                 .add(QUERY_GRANT_TYPE, INSTALLED_CLIENT_GRANT)
                 .add(QUERY_DEVICE_ID, DEVICE_ID)
                 .build();
 
         if (needsToken()) {
-            Observable<ResponseBody> observable = redditDefault.getToken(body);
-            return observable.map(responseBody -> {
+            Single<ResponseBody> response = mRedditDefaultService.getToken(body);
+            return response.map(responseBody -> {
                 JSONObject jsonResponse = new JSONObject(responseBody.string());
                 String accessToken = jsonResponse.getString(ACCESS_TOKEN);
                 long timeExpire = System.currentTimeMillis() + (jsonResponse.getLong(EXPIRES_IN) * 1000);
 
                 if (!TextUtils.isEmpty(accessToken)) {
-                    preferencesEditor.putString(ACCESS_TOKEN, accessToken);
-                    preferencesEditor.putLong(EXPIRES_IN, timeExpire);
+                    mPreferencesEditor.putString(ACCESS_TOKEN, accessToken);
+                    mPreferencesEditor.putLong(EXPIRES_IN, timeExpire);
                 }
 
-                return preferencesEditor.commit();
+                return mPreferencesEditor.commit();
             });
         } else {
-            return Observable.just(true);
+            return Single.just(true);
         }
     }
 
@@ -135,16 +136,17 @@ public class RedditDownloader {
      */
     private void revokeToken() {
         RequestBody body = new FormBody.Builder()
-                .add(TOKEN, preferences.getString(ACCESS_TOKEN, ""))
+                .add(TOKEN, mPreferences.getString(ACCESS_TOKEN, ""))
                 .add(TOKEN_TYPE_HINT, ACCESS_TOKEN)
                 .build();
 
-        Observable<ResponseBody> observable = redditDefault.revokeToken(body);
-        observable.subscribe();
+        Single<ResponseBody> response = mRedditDefaultService.revokeToken(body);
+        response.subscribe();
     }
 
     /**
      * Checks to see if a string contains any word from a specified list of keywords.
+     *
      * @param title string to be checked
      * @param keywords list of words to check title against
      * @return true if title contains at least one word from the list, false otherwise
@@ -164,33 +166,35 @@ public class RedditDownloader {
 
     /**
      * This method is responsible for executing the request to fetch comments from Reddit.
-     * @param subreddit name of subreddit where thread for comments are posted
+     *
+     * @param subreddit name of subreddit where thread is posted
      * @param threadId id of thread where comments are posted
      * @return json string from reddit or empty string if request failed
      */
-    private Observable<String> executeCommentsRequest(String subreddit, String threadId) {
-        Observable<ResponseBody> observable = redditOauth.listCommentsJson(subreddit, threadId);
-        return observable.map(responseBody -> responseBody.string());
+    private Single<String> executeCommentsRequest(String subreddit, String threadId) {
+        Single<ResponseBody> response = mRedditOAuthService.listCommentsJson(subreddit, threadId);
+        return response.map(responseBody -> responseBody.string());
     }
 
     /**
-     * This method is responsible for fetching comments from Reddit. It first checks if oauth service
+     * Public facing method responsible for fetching comments from Reddit. It first checks if OAuth service
      * needs access token before proceeding accordingly.
-     * @param subreddit name of subreddit where thread for comments are posted
+     *
+     * @param subreddit name of subreddit where thread is posted
      * @param threadId id of thread where comments are posted
      * @return json string from reddit or empty string if request failed or service could not be initialized
      */
-    public Observable<String> getComments(String subreddit, String threadId) {
+    public Single<String> getComments(String subreddit, String threadId) {
         if (!needsToken()) {
             return executeCommentsRequest(subreddit, threadId);
         } else {
             return getToken()
                     .flatMap(result -> {
                         if (result) {
-                            redditOauth = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
+                            mRedditOAuthService = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), mContext);
                             return executeCommentsRequest(subreddit, threadId);
                         } else {
-                            return Observable.just("");
+                            return Single.just("");
                         }
                     });
         }
@@ -198,38 +202,39 @@ public class RedditDownloader {
 
     /**
      * This method is responsible for executing the request to fetch a list of threads from Reddit.
+     *
      * @param subreddit name of subreddit to fetch threads from
      * @param keywords list of keywords to filter threads with
      * @return list of threads that have been filtered
      */
-    private Observable<List<RedditThread>> executeThreadsRequest(String subreddit, List<String> keywords) {
-        Observable<RedditResponse<RedditListing>> observable = redditOauth.listThreads(subreddit);
-        return observable.flatMap(listing -> Observable.fromIterable(listing.getData().getChildren()))
+    private Single<List<RedditThread>> executeThreadsRequest(String subreddit, List<String> keywords) {
+        Single<RedditResponse<RedditListing>> response = mRedditOAuthService.listThreads(subreddit);
+        return response.flatMapObservable(listing -> Observable.fromIterable(listing.getData().getChildren()))
                 .filter(redditObject -> redditObject instanceof RedditThread)
                 .map(redditObject -> (RedditThread) redditObject)
                 .filter(thread -> keywords.isEmpty() || containsKeyword(thread.getTitle(), keywords))
-                .toList()
-                .toObservable();
+                .toList();
     }
 
     /**
-     * This method is responsible for fetching threads from Reddit. It first checks if oauth service
+     * Public facing method responsible for fetching threads from Reddit. It first checks if OAuth service
      * needs access token before proceeding accordingly.
+     *
      * @param subreddit name of subreddit to fetch threads from
      * @param keywords list of keywords to filter threads with
      * @return list of threads that have been filtered
      */
-    public Observable<List<RedditThread>> getThreads(String subreddit, List<String> keywords) {
+    public Single<List<RedditThread>> getThreads(String subreddit, List<String> keywords) {
         if (!needsToken()) {
             return executeThreadsRequest(subreddit, keywords);
         } else {
             return getToken()
                     .flatMap(result -> {
                         if (result) {
-                            redditOauth = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
+                            mRedditOAuthService = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), mContext);
                             return executeThreadsRequest(subreddit, keywords);
                         } else {
-                            return Observable.error(new IOException());
+                            return Single.error(new IOException());
                         }
                     });
         }
@@ -237,33 +242,35 @@ public class RedditDownloader {
 
     /**
      * This method is responsible for executing the request to fetch information about a subreddit.
+     *
      * @param subreddit name of subreddit to get information for
-     * @return a subreddit object
+     * @return a subreddit object or error if subreddit does not exist
      */
-    private Observable<Subreddit> executeSubredditsRequest(String subreddit) {
-        return redditOauth.checkSubreddit(subreddit)
+    private Single<Subreddit> executeSubredditsRequest(String subreddit) {
+        return mRedditOAuthService.checkSubreddit(subreddit)
                 .flatMap(response -> response.getData().getDisplayName() != null
-                        ? Observable.just(response.getData())
-                        : Observable.error(new InvalidSubredditException()));
+                        ? Single.just(response.getData())
+                        : Single.error(new InvalidSubredditException()));
     }
 
     /**
-     * This method is responsible for fetching information about a subreddit. It first checks if oauth service
-     * needs access token before proceeding accordingly.
+     * Public facing method that is responsible for fetching information about a subreddit. It first checks if
+     * OAuth service needs access token before proceeding accordingly.
+     *
      * @param subreddit name of subreddit to get information for
-     * @return list of threads that have been filtered
+     * @return subreddit object if subreddit exists. Error otherwise.
      */
-    public Observable<Subreddit> checkSubreddit(String subreddit) {
+    public Single<Subreddit> checkSubreddit(String subreddit) {
         if (!needsToken()) {
             return executeSubredditsRequest(subreddit);
         } else {
             return getToken()
                     .flatMap(result -> {
                         if (result) {
-                            redditOauth = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), context);
+                            mRedditOAuthService = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), mContext);
                             return executeSubredditsRequest(subreddit);
                         } else {
-                            return Observable.error(new IOException());
+                            return Single.error(new IOException());
                         }
                     });
         }
@@ -271,33 +278,39 @@ public class RedditDownloader {
 
     /**
      * Downloads the image from a given url.
+     *
      * @param mediaUrl url to download image from
+     * @param targetWidth desired width of the image
+     * @param targetHeight desired height of the image
      * @return byte array with contents of the image
      */
-    private Observable<byte[]> downloadImage(String mediaUrl, int targetWidth, int targetHeight){
+    private Single<byte[]> downloadImage(String mediaUrl, int targetWidth, int targetHeight){
         GlideUrl url = new GlideUrl(mediaUrl,
                 new LazyHeaders.Builder()
                         .addHeader(AUTHORIZATION, getAuthHeader())
                         .addHeader(USER_AGENT, CUSTOM_USER_AGENT)
                         .build());
         try {
-            return Observable.just(Glide.with(context).load(url)
+            return Single.just(Glide.with(mContext).load(url)
                     .asBitmap()
                     .toBytes()
                     .into(targetWidth, targetHeight)
                     .get());
         }catch (Exception e){
             Log.d(TAG, e.toString());
-            return Observable.just(EMPTY_MEDIA);
+            return Single.just(EMPTY_MEDIA);
         }
     }
 
     /**
-     * Downloads the image from a given Reddit thread.
+     * Public facing method for downloading an image from reddit.
+     *
      * @param thread Reddit thread to download image from
+     * @param targetWidth desired width of the image
+     * @param targetHeight desired height of the image
      * @return byte array with contents of the image
      */
-    public Observable<byte[]> downloadImage(RedditThread thread, int targetWidth, int targetHeight){
+    public Single<byte[]> downloadImage(RedditThread thread, int targetWidth, int targetHeight){
         Preview preview = thread.getPreview();
 
         if(preview != null) {
@@ -313,12 +326,12 @@ public class RedditDownloader {
                         if (result)
                             return downloadImage(image.getSource().getUrl(), targetWidth, targetHeight);
                         else
-                            return Observable.just(EMPTY_MEDIA);
+                            return Single.just(EMPTY_MEDIA);
                     });
                 }
             }
         }
 
-        return Observable.just(EMPTY_MEDIA);
+        return Single.just(EMPTY_MEDIA);
     }
 }

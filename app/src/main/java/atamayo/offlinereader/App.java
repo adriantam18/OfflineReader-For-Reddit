@@ -6,14 +6,11 @@ import android.content.Context;
 import com.squareup.leakcanary.LeakCanary;
 import com.squareup.leakcanary.RefWatcher;
 
-import org.greenrobot.greendao.database.Database;
-
-import atamayo.offlinereader.RedditDAO.DaoMaster;
-import atamayo.offlinereader.RedditDAO.DaoSession;
+import atamayo.offlinereader.Data.FileManager;
+import atamayo.offlinereader.Data.RedditDatabase;
+import atamayo.offlinereader.Data.SubredditsRepository;
 
 public class App extends Application {
-    private DaoSession daoSession;
-    private DaoMaster daoMaster;
 
     public static RefWatcher getRefWatcher(Context context) {
         App application = (App) context.getApplicationContext();
@@ -21,15 +18,11 @@ public class App extends Application {
     }
 
     private RefWatcher refWatcher;
+    private FileManager fileManager;
 
     @Override
     public void onCreate(){
         super.onCreate();
-
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, "subreddits-db");
-        Database db = helper.getWritableDb();
-        daoMaster = new DaoMaster(db);
-        daoSession = daoMaster.newSession();
 
         if(LeakCanary.isInAnalyzerProcess(this)){
             return;
@@ -38,7 +31,19 @@ public class App extends Application {
         refWatcher = LeakCanary.install(this);
     }
 
-    public DaoSession getDaoSession(){
-        return daoSession;
+    public RedditDatabase getDatabase() {
+        return RedditDatabase.getDatabase(this);
+    }
+
+    public FileManager getFileManager() {
+        if (fileManager == null) {
+            fileManager = new FileManager(this);
+        }
+
+        return fileManager;
+    }
+
+    public SubredditsRepository getSubredditsRepository() {
+        return SubredditsRepository.getInstance(getDatabase(), getFileManager());
     }
 }

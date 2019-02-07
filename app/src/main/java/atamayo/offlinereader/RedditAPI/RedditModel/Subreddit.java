@@ -1,61 +1,57 @@
 package atamayo.offlinereader.RedditAPI.RedditModel;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.Index;
+import android.arch.persistence.room.PrimaryKey;
+import android.support.annotation.NonNull;
+import android.support.v7.util.DiffUtil;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import org.greenrobot.greendao.annotation.Entity;
-import org.greenrobot.greendao.annotation.Id;
-import org.greenrobot.greendao.annotation.Index;
-import org.greenrobot.greendao.annotation.Generated;
-
 @Entity(
-        nameInDb = "SUBREDDITS_LIST"
+        tableName = "subreddit",
+        indices = {@Index(value = "display_name", unique = true)}
 )
 public class Subreddit extends RedditObject {
-    @Id
-    Long id;
+    @PrimaryKey(autoGenerate = true)
+    long id;
 
     @Expose
     @SerializedName("display_name")
-    @Index(unique = true)
+    @ColumnInfo(name = "display_name")
+    @NonNull
     String displayName;
 
     @Expose
     @SerializedName("display_name_prefixed")
+    @ColumnInfo(name = "display_name_prefixed")
     String displayNamePrefixed;
 
     @Expose
-    int susbscribers;
+    int subscribers;
 
     @Expose
     boolean over18;
 
-    public Subreddit(Long id, String displayName, int susbscribers,
+    public Subreddit(String displayName, String displayNamePrefixed, int subscribers,
             boolean over18) {
-        this.id = id;
         this.displayName = displayName;
-        this.susbscribers = susbscribers;
+        this.displayNamePrefixed = displayNamePrefixed;
+        this.subscribers = subscribers;
         this.over18 = over18;
     }
 
     public Subreddit() {
     }
 
-    @Generated(hash = 914230089)
-    public Subreddit(Long id, String displayName, String displayNamePrefixed,
-            int susbscribers, boolean over18) {
-        this.id = id;
-        this.displayName = displayName;
-        this.displayNamePrefixed = displayNamePrefixed;
-        this.susbscribers = susbscribers;
-        this.over18 = over18;
-    }
-
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -75,12 +71,12 @@ public class Subreddit extends RedditObject {
         this.displayNamePrefixed = displayNamePrefixed;
     }
 
-    public int getSusbscribers() {
-        return susbscribers;
+    public int getSubscribers() {
+        return subscribers;
     }
 
-    public void setSusbscribers(int susbscribers) {
-        this.susbscribers = susbscribers;
+    public void setSubscribers(int subscribers) {
+        this.subscribers = subscribers;
     }
 
     public void setOver18(boolean over18) {

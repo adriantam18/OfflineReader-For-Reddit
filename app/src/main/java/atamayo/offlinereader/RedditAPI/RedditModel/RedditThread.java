@@ -1,36 +1,47 @@
 package atamayo.offlinereader.RedditAPI.RedditModel;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.Index;
+import android.arch.persistence.room.PrimaryKey;
+import android.support.annotation.NonNull;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import org.greenrobot.greendao.annotation.Entity;
-import org.greenrobot.greendao.annotation.Id;
-import org.greenrobot.greendao.annotation.Index;
-import org.greenrobot.greendao.annotation.Generated;
-import org.greenrobot.greendao.annotation.Transient;
+import static android.arch.persistence.room.ForeignKey.CASCADE;
 
 @Entity(
-        nameInDb = "REDDIT_THREADS"
+        tableName = "reddit_thread",
+        indices = {@Index(value = "subreddit"), @Index(value = "full_name", unique = true)},
+        foreignKeys = @ForeignKey(entity = Subreddit.class,
+                                  parentColumns = "display_name",
+                                  childColumns = "subreddit",
+                                  onDelete = CASCADE)
 )
 public class RedditThread extends RedditObject {
-    @Transient
+    @Ignore
     private static final String MEDIA_PREFIX = "media_";
 
-    @Transient
+    @Ignore
     private static final String COMMENT_PREFIX = "comment_";
-
-    @Id
-    Long id;
 
     boolean wasClicked = false;
 
+    @PrimaryKey(autoGenerate = true)
+    long id;
+
     @Expose
     @SerializedName("name")
-    @Index(unique = true)
+    @ColumnInfo(name = "full_name")
+    @NonNull
     String fullName;
 
     @Expose
     @SerializedName("id")
+    @ColumnInfo(name = "thread_id")
     String threadId;
 
     @Expose
@@ -56,6 +67,7 @@ public class RedditThread extends RedditObject {
 
     @Expose
     @SerializedName("selftext_html")
+    @ColumnInfo(name = "selftext_html")
     String selftextHtml;
 
     @Expose
@@ -63,36 +75,36 @@ public class RedditThread extends RedditObject {
 
     @Expose
     @SerializedName("num_comments")
+    @ColumnInfo(name = "num_comments")
     int numComments;
 
     @Expose
     @SerializedName("created_utc")
+    @ColumnInfo(name = "created_utc")
     long createdUTC;
 
     @Expose
     boolean over18;
 
-    @Transient
+    @Ignore
     @Expose
     Preview preview;
 
     @Expose
     String thumbnail;
 
-    @Transient
+    @Ignore
     byte[] imageBytes;
 
     String mediaPath;
 
     String commentPath;
 
-    @Generated(hash = 273131024)
-    public RedditThread(Long id, boolean wasClicked, String fullName, String threadId,
+    public RedditThread(boolean wasClicked, String fullName, String threadId,
             String subreddit, String title, String author, int score, int ups, int downs,
             String selftext, String selftextHtml, String permalink, int numComments,
             long createdUTC, boolean over18, String thumbnail, String mediaPath,
             String commentPath) {
-        this.id = id;
         this.wasClicked = wasClicked;
         this.fullName = fullName;
         this.threadId = threadId;
@@ -113,16 +125,7 @@ public class RedditThread extends RedditObject {
         this.commentPath = commentPath;
     }
 
-    @Generated(hash = 1439624015)
     public RedditThread() {
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public boolean getWasClicked() {
@@ -131,6 +134,14 @@ public class RedditThread extends RedditObject {
 
     public void setWasClicked(boolean wasClicked) {
         this.wasClicked = wasClicked;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getFullName() {
@@ -239,10 +250,6 @@ public class RedditThread extends RedditObject {
 
     public void setCreatedUTC(long createdUTC) {
         this.createdUTC = createdUTC;
-    }
-
-    public boolean isOver18() {
-        return over18;
     }
 
     public void setOver18(boolean over18) {
