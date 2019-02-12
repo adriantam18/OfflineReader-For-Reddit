@@ -145,26 +145,6 @@ public class RedditDownloader {
     }
 
     /**
-     * Checks to see if a string contains any word from a specified list of keywords.
-     *
-     * @param title string to be checked
-     * @param keywords list of words to check title against
-     * @return true if title contains at least one word from the list, false otherwise
-     */
-    private boolean containsKeyword(String title, List<String> keywords) {
-        String[] words = title.split("\\s+");
-        for(String word : words){
-            for(String keyword : keywords){
-                if(word.toLowerCase().contains(keyword.toLowerCase())){
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * This method is responsible for executing the request to fetch comments from Reddit.
      *
      * @param subreddit name of subreddit where thread is posted
