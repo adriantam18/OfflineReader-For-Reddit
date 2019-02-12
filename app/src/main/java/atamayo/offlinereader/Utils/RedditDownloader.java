@@ -204,15 +204,13 @@ public class RedditDownloader {
      * This method is responsible for executing the request to fetch a list of threads from Reddit.
      *
      * @param subreddit name of subreddit to fetch threads from
-     * @param keywords list of keywords to filter threads with
      * @return list of threads that have been filtered
      */
-    private Single<List<RedditThread>> executeThreadsRequest(String subreddit, List<String> keywords) {
+    private Single<List<RedditThread>> executeThreadsRequest(String subreddit) {
         Single<RedditResponse<RedditListing>> response = mRedditOAuthService.listThreads(subreddit);
         return response.flatMapObservable(listing -> Observable.fromIterable(listing.getData().getChildren()))
                 .filter(redditObject -> redditObject instanceof RedditThread)
                 .map(redditObject -> (RedditThread) redditObject)
-                .filter(thread -> keywords.isEmpty() || containsKeyword(thread.getTitle(), keywords))
                 .toList();
     }
 
@@ -221,18 +219,17 @@ public class RedditDownloader {
      * needs access token before proceeding accordingly.
      *
      * @param subreddit name of subreddit to fetch threads from
-     * @param keywords list of keywords to filter threads with
      * @return list of threads that have been filtered
      */
-    public Single<List<RedditThread>> getThreads(String subreddit, List<String> keywords) {
+    public Single<List<RedditThread>> getThreads(String subreddit) {
         if (!needsToken()) {
-            return executeThreadsRequest(subreddit, keywords);
+            return executeThreadsRequest(subreddit);
         } else {
             return getToken()
                     .flatMap(result -> {
                         if (result) {
                             mRedditOAuthService = RedditOAuthClient.createClass(RedditOAuthService.class, getAuthHeader(), mContext);
-                            return executeThreadsRequest(subreddit, keywords);
+                            return executeThreadsRequest(subreddit);
                         } else {
                             return Single.error(new IOException());
                         }

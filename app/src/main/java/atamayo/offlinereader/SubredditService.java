@@ -78,18 +78,17 @@ public class SubredditService extends Service {
         if (subsToDownload != null && !subsToDownload.isEmpty()) {
             for (final String subreddit : subsToDownload) {
                 List<String> keywords = new ArrayList<>(mKeywords.getKeywords(subreddit));
-                mDisposable.add(mRedditDownloader.getThreads(subreddit, keywords)
+                mDisposable.add(mRedditDownloader.getThreads(subreddit)
                         .subscribeOn(Schedulers.single())
                         .toObservable()
                         .flatMap(Observable::fromIterable)
-                        .concatMap(redditThread ->
-                                Observable.just(redditThread)
-                                        .delay(2, TimeUnit.SECONDS))
-                        .doOnNext(redditThread ->
-                                redditThread.setImageBytes(mRedditDownloader.downloadImage(redditThread, 216, 384).blockingGet()))
+                        .concatMap(redditThread -> Observable.just(redditThread).delay(1, TimeUnit.SECONDS))
+                        .filter(redditThread -> keywords.isEmpty() || containsKeyword(redditThread.getTitle(), keywords))
+                        .doOnNext(redditThread -> redditThread.setImageBytes(mRedditDownloader.downloadImage(redditThread, 216, 384)
+                                .blockingGet()))
                         .filter(mRepository::addRedditThread)
-                        .map(redditThread ->
-                                Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(), redditThread.getThreadId())))
+                        .map(redditThread -> Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(),
+                                redditThread.getThreadId())))
                         .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingGet()),
                                 this::processError,
                                 this::processCompletedTask));
@@ -181,5 +180,25 @@ public class SubredditService extends Service {
 
             mNotificationManager.createNotificationChannel(channel);
         }
+    }
+
+    /**
+     * Checks to see if a string contains any word from a specified list of keywords.
+     *
+     * @param title string to be checked
+     * @param keywords list of words to check title against
+     * @return true if title contains at least one word from the list, false otherwise
+     */
+    private boolean containsKeyword(String title, List<String> keywords) {
+        String[] words = title.split("\\s+");
+        for(String word : words){
+            for(String keyword : keywords){
+                if(word.toLowerCase().contains(keyword.toLowerCase())){
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
