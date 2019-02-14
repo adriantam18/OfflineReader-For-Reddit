@@ -14,6 +14,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/time_author_view"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="@dimen/spacing_small"
         android:textColor="@color/white"
         android:textSize="@dimen/default_text_size_large" />
@@ -25,6 +26,7 @@
         app:layout_constraintTop_toBottomOf="@id/title_view"
         app:layout_constraintBottom_toTopOf="@+id/self_text_view"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="@dimen/spacing_small"
         android:textColor="@color/gray_500"
         android:textSize="@dimen/default_text_size_small" />
@@ -36,6 +38,7 @@
         app:layout_constraintTop_toBottomOf="@id/time_author_view"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:background="@drawable/rounded_textview"
         android:textColor="@color/white"
         android:textSize="@dimen/default_text_size_small"
