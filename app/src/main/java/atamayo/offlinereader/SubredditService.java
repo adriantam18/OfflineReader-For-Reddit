@@ -84,8 +84,6 @@ public class SubredditService extends Service {
                         .flatMap(Observable::fromIterable)
                         .concatMap(redditThread -> Observable.just(redditThread).delay(1, TimeUnit.SECONDS))
                         .filter(redditThread -> keywords.isEmpty() || containsKeyword(redditThread.getTitle(), keywords))
-                        .doOnNext(redditThread -> redditThread.setImageBytes(mRedditDownloader.downloadImage(redditThread, 216, 384)
-                                .blockingGet()))
                         .filter(mRepository::addRedditThread)
                         .map(redditThread -> Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(),
                                 redditThread.getThreadId())))

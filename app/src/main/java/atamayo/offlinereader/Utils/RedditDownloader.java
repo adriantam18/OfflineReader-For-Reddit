@@ -5,11 +5,6 @@ import android.content.SharedPreferences;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.model.GlideUrl;
-import com.bumptech.glide.load.model.LazyHeaders;
 
 import org.json.JSONObject;
 
@@ -19,14 +14,10 @@ import java.util.List;
 import atamayo.offlinereader.RedditAPI.InvalidSubredditException;
 import atamayo.offlinereader.RedditAPI.RedditDefaultClient;
 import atamayo.offlinereader.RedditAPI.RedditDefaultService;
-import atamayo.offlinereader.RedditAPI.RedditModel.Gif;
-import atamayo.offlinereader.RedditAPI.RedditModel.Image;
-import atamayo.offlinereader.RedditAPI.RedditModel.Preview;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditResponse;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditListing;
 import atamayo.offlinereader.RedditAPI.RedditModel.RedditThread;
 import atamayo.offlinereader.RedditAPI.RedditModel.Subreddit;
-import atamayo.offlinereader.RedditAPI.RedditModel.Variant;
 import atamayo.offlinereader.RedditAPI.RedditOAuthClient;
 import atamayo.offlinereader.RedditAPI.RedditOAuthService;
 import io.reactivex.Observable;
@@ -41,7 +32,6 @@ import okhttp3.ResponseBody;
  */
 public class RedditDownloader {
     private final static String TAG = "REDDIT DOWNLOADER";
-    private final static byte[] EMPTY_MEDIA = {};
 
     public final static String CLIENT_ID = "YOUR CLIENT ID";
     public final static String CLIENT_SECRET = "YOUR CLIENT SECRET";
@@ -251,64 +241,5 @@ public class RedditDownloader {
                         }
                     });
         }
-    }
-
-    /**
-     * Downloads the image from a given url.
-     *
-     * @param mediaUrl url to download image from
-     * @param targetWidth desired width of the image
-     * @param targetHeight desired height of the image
-     * @return byte array with contents of the image
-     */
-    private Single<byte[]> downloadImage(String mediaUrl, int targetWidth, int targetHeight){
-        GlideUrl url = new GlideUrl(mediaUrl,
-                new LazyHeaders.Builder()
-                        .addHeader(AUTHORIZATION, getAuthHeader())
-                        .addHeader(USER_AGENT, CUSTOM_USER_AGENT)
-                        .build());
-        try {
-            return Single.just(Glide.with(mContext).load(url)
-                    .asBitmap()
-                    .toBytes()
-                    .into(targetWidth, targetHeight)
-                    .get());
-        }catch (Exception e){
-            Log.d(TAG, e.toString());
-            return Single.just(EMPTY_MEDIA);
-        }
-    }
-
-    /**
-     * Public facing method for downloading an image from reddit.
-     *
-     * @param thread Reddit thread to download image from
-     * @param targetWidth desired width of the image
-     * @param targetHeight desired height of the image
-     * @return byte array with contents of the image
-     */
-    public Single<byte[]> downloadImage(RedditThread thread, int targetWidth, int targetHeight){
-        Preview preview = thread.getPreview();
-
-        if(preview != null) {
-            Image image = preview.getImages().get(0);
-            Variant variant = image.getVariants();
-            Gif gif = variant.getGif();
-
-            if (gif == null) {
-                if (!needsToken()) {
-                    return downloadImage(image.getSource().getUrl(), targetWidth, targetHeight);
-                } else {
-                    return getToken().flatMap(result -> {
-                        if (result)
-                            return downloadImage(image.getSource().getUrl(), targetWidth, targetHeight);
-                        else
-                            return Single.just(EMPTY_MEDIA);
-                    });
-                }
-            }
-        }
-
-        return Single.just(EMPTY_MEDIA);
     }
 }

@@ -23,27 +23,18 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/title_view"
-        app:layout_constraintBottom_toTopOf="@id/image"
+        app:layout_constraintBottom_toTopOf="@+id/self_text_view"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginBottom="@dimen/spacing_small"
         android:textColor="@color/gray_500"
         android:textSize="@dimen/default_text_size_small" />
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/time_author_view"
-        app:layout_constraintBottom_toTopOf="@id/self_text_view"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginBottom="@dimen/spacing_small"
-        android:visibility="gone" />
-
     <TextView
         android:id="@+id/self_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/image"
+        app:layout_constraintTop_toBottomOf="@id/time_author_view"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:background="@drawable/rounded_textview"
         android:textColor="@color/white"

@@ -57,8 +57,6 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         @Nullable
         @BindView(R.id.time_author_view) TextView mTimeAuthorView;
         @Nullable
-        @BindView(R.id.image) ImageView mImageView;
-        @Nullable
         @BindView(R.id.self_text_view) TextView mSelfTextView;
         @BindColor(R.color.white) int mDefaultColor;
         @BindColor(R.color.red_500) int mClickedColor;
@@ -83,14 +81,6 @@ public class ThreadCommentsAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                 mSelfTextView.setVisibility(View.VISIBLE);
                 Spanned html = fromHtml(selftextHtml);
                 mSelfTextView.setText(trim(html, 0, html.length()));
-            }
-
-            if (mImageView.getVisibility() == View.GONE) {
-                mImageView.setVisibility(View.VISIBLE);
-                Glide.with(mContext).load(thread.getMediaPath())
-                        .fitCenter()
-                        .crossFade()
-                        .into(mImageView);
             }
         }
     }
