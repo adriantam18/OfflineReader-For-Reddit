@@ -16,3 +16,6 @@ The app is currently for viewing threads only and does not support logging into 
 
 ## Comments
 ![Comments](/screenshots/comments_section.png)
+
+# Notes
+Make sure to change CLIENT_ID, CLIENT_SECRET, DEVICE_ID, CUSTOM_USER_AGENT to your own on [RedditDownloader](/app/src/main/java/atamayo/offlinereader/Utils/RedditDownloader.java) before installing the app on your device.
