@@ -164,6 +164,10 @@ public class SubThreadsListing extends Fragment
     private void setObservers() {
         mViewModel.getRedditThreadsObservable().observe(this, redditThreads -> {
             if (!redditThreads.isEmpty()) {
+                if (mSubThreadsList.getVisibility() == View.GONE) {
+                    mSubThreadsList.setVisibility(View.VISIBLE);
+                    mErrorMessage.setVisibility(View.GONE);
+                }
                 mAdapter.submitList(redditThreads);
             } else {
                 showEmptyThreads();
