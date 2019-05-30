@@ -35,6 +35,8 @@ import atamayo.offlinereader.SubredditService;
 import atamayo.offlinereader.ThreadComments.ThreadCommentsListing;
 import atamayo.offlinereader.Utils.OnLoadMoreItems;
 import atamayo.offlinereader.Utils.Schedulers.AppScheduler;
+import atamayo.offlinereader.YesNoDialog;
+import atamayo.offlinereader.YesNoDialogListener;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -46,11 +48,13 @@ import butterknife.Unbinder;
 public class SubThreadsListing extends Fragment
         implements ThreadListCallbacks,
                 OnLoadMoreItems,
-                ConfirmDialogListener {
+                ConfirmDialogListener,
+                YesNoDialogListener {
     public static final String TAG = "SubThreadsListing";
     public static final String SUBREDDIT_DISPLAY_NAME = "Subreddit";
     private static final int ITEMS_PER_PAGE = 10;
     private static final String EMPTY_THREADS_MESSAGE = "No threads to show";
+    private static final String ACTION_DELETE_ALL_THREADS = "Delete all threads";
 
     @BindView(R.id.sub_threads_list) RecyclerView mSubThreadsList;
     @BindView(R.id.error_msg) TextView mErrorMessage;
@@ -132,7 +136,8 @@ public class SubThreadsListing extends Fragment
                 mViewModel.getCurrentSubreddit();
                 return true;
             case R.id.action_delete:
-                mViewModel.clearThreads();
+                showYesNoDialog("Delete all?", "This will delete all threads and their comments",
+                        ACTION_DELETE_ALL_THREADS);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -154,6 +159,16 @@ public class SubThreadsListing extends Fragment
 
     @Override
     public void onConfirmClick(String action) {}
+
+    @Override
+    public void onYesClick(String action) {
+        if (action.equals(ACTION_DELETE_ALL_THREADS)) {
+            mViewModel.clearThreads();
+        }
+    }
+
+    @Override
+    public void onNoClick(String action) {}
 
     @Override
     public void loadMore() {
@@ -209,6 +224,12 @@ public class SubThreadsListing extends Fragment
         ConfirmDialog dialog = ConfirmDialog.newInstance(title, message, action);
         dialog.setTargetFragment(this, 0);
         dialog.show(getFragmentManager(), "DIALOG");
+    }
+
+    private void showYesNoDialog(String title, String message, String action) {
+        YesNoDialog fragment = YesNoDialog.newInstance(title, message, action);
+        fragment.setTargetFragment(this, 0);
+        fragment.show(getFragmentManager(), YesNoDialog.TAG);
     }
 
     private void showEmptyThreads() {
