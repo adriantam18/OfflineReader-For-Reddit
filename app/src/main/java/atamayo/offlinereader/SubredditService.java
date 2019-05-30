@@ -25,7 +25,6 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class SubredditService extends Service {
-    private final static int FOREGROUND_ID = 12148;
     private final static int NOTIF_ID = 12149;
     private final static String CHANNEL_ID = "OfflineReader Notifications";
     private final static String TAG = "Subreddit_Service";
@@ -70,7 +69,8 @@ public class SubredditService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         //Keep track of running tasks so we know when to stop
         if (mRunningTasks == 0) {
-            startForeground(FOREGROUND_ID, getForegroundNotification());
+            startForeground(NOTIF_ID, getNotification(getMainActivityIntent(), "", 0, 0,
+                    true, NotificationCompat.PRIORITY_DEFAULT));
         }
         ++mRunningTasks;
 
@@ -85,6 +85,7 @@ public class SubredditService extends Service {
                         .concatMap(redditThread -> Observable.just(redditThread).delay(1, TimeUnit.SECONDS))
                         .filter(redditThread -> keywords.isEmpty() || containsKeyword(redditThread.getTitle(), keywords))
                         .filter(mRepository::addRedditThread)
+                        .doOnNext(redditThread -> updateNotificationText(redditThread.getTitle()))
                         .map(redditThread -> Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(),
                                 redditThread.getThreadId())))
                         .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingGet()),
@@ -109,14 +110,10 @@ public class SubredditService extends Service {
      * Notifies the user of an error and stops the service from continuing.
      */
     private void processError(Throwable throwable) {
-        Notification notification = mNotificationBuilder
-                .setContentIntent(getMainActivityIntent())
-                .setProgress(0, 0, false)
-                .setContentText("Some threads may not have been downloaded")
-                .build();
-
-        mNotificationManager.notify(NOTIF_ID, notification);
-        stopSelf();
+        mNotificationManager.notify(NOTIF_ID, getNotification(getMainActivityIntent(),
+                "Some threads may not have been downloaded", 0, 0, false,
+                NotificationCompat.PRIORITY_DEFAULT));
+        endService();
     }
 
     /**
@@ -131,28 +128,37 @@ public class SubredditService extends Service {
          * send the notification and stop the service.
          */
         if(--mRunningTasks == 0) {
-            Notification notification = mNotificationBuilder
-                    .setContentIntent(getMainActivityIntent())
-                    .setProgress(0, 0, false)
-                    .setContentText("New threads have been downloaded")
-                    .build();
-
-            mNotificationManager.notify(NOTIF_ID, notification);
-            stopSelf();
+            mNotificationManager.notify(NOTIF_ID, getNotification(getMainActivityIntent(),
+                    "New threads have been downloaded", 0, 0, false,
+                    NotificationCompat.PRIORITY_DEFAULT));
+            endService();
         }
     }
 
+    private void updateNotificationText(String text) {
+        mNotificationManager.notify(NOTIF_ID, getNotification(getMainActivityIntent(),
+                text, 0, 0, true,
+                NotificationCompat.PRIORITY_DEFAULT));
+    }
+
     /**
-     * Builds and returns the notification that allows user to see
-     * an indeterminate progress of the downloads
+     * Builds and returns notification for display
      *
-     * @return
+     * @param intent Intent to be executed when notification is clicked
+     * @param text Text content of notification
+     * @param maxProgress Max value for displaying determinate progress
+     * @param progress Current value for displaying progress
+     * @param indeterminate Whether notification should display indeterminate progress bar or fixed value
+     * @param priority Indicates the priority level for notification
+     * @return Notification with the values specified
      */
-    private Notification getForegroundNotification(){
+    private Notification getNotification(PendingIntent intent, String text, int maxProgress,
+                                         int progress, boolean indeterminate, int priority) {
         return mNotificationBuilder
-                .setContentIntent(getMainActivityIntent())
-                .setProgress(0, 0, true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(intent)
+                .setContentText(text)
+                .setProgress(maxProgress, progress, indeterminate)
+                .setPriority(priority)
                 .build();
     }
 
@@ -175,6 +181,7 @@ public class SubredditService extends Service {
 
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
+            channel.setSound(null, null);
 
             mNotificationManager.createNotificationChannel(channel);
         }
@@ -198,5 +205,13 @@ public class SubredditService extends Service {
         }
 
         return false;
+    }
+
+    private void endService() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            stopForeground(Service.STOP_FOREGROUND_DETACH);
+        else
+            stopForeground(false);
+        stopSelf();
     }
 }
