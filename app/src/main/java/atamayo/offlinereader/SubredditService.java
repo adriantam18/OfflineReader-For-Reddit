@@ -22,6 +22,7 @@ import atamayo.offlinereader.Data.SubredditsDataSource;
 import atamayo.offlinereader.Data.KeywordsPreference;
 import atamayo.offlinereader.Utils.RedditDownloader;
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -39,7 +40,6 @@ public class SubredditService extends Service {
     private CompositeDisposable mDisposable;
     private boolean isDownloading = false;
     private Queue<String> subredditsQueue = new LinkedList<>();
-    int currNumSubredditsInQueue = 0;
 
     public SubredditService() {
     }
@@ -75,7 +75,6 @@ public class SubredditService extends Service {
             isDownloading = true;
             startForeground(NOTIF_ID, getNotification(getMainActivityIntent(), "", 0, 0,
                     true, NotificationCompat.PRIORITY_DEFAULT));
-            currNumSubredditsInQueue = subredditsQueue.size();
             executeTask(subredditsQueue);
         }
 
@@ -108,7 +107,9 @@ public class SubredditService extends Service {
                 .doOnNext(redditThread -> updateNotificationText(redditThread.getTitle()))
                 .map(redditThread -> Pair.create(redditThread, mRedditDownloader.getComments(redditThread.getSubreddit(),
                         redditThread.getThreadId())))
-                .subscribe(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingGet()),
+                .doOnNext(pair -> mRepository.addRedditComments(pair.first, pair.second.blockingGet()))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(redditThreadSinglePair -> {},
                         this::processError,
                         this::processCompletedTask));
     }
@@ -126,14 +127,12 @@ public class SubredditService extends Service {
     /**
      * This method is responsible for building a notification that
      * lets the user know that downloads have been completed. It also
-     * stops this service if appropriate.
+     * stops this service if no more subreddits have to be processed.
      */
     private void processCompletedTask() {
-        //Remove processed subreddits and check if there aren't anymore in the queue
+        //Remove processed subreddit and check if there aren't anymore in the queue
         //End service if the queue is empty, otherwise continue processing remaining subreddits
-        for (int i = 0; i < currNumSubredditsInQueue; i++) {
-            subredditsQueue.poll();
-        }
+        subredditsQueue.poll();
 
         if (subredditsQueue.isEmpty()) {
             mNotificationManager.notify(NOTIF_ID, getNotification(getMainActivityIntent(),
@@ -141,7 +140,6 @@ public class SubredditService extends Service {
                     NotificationCompat.PRIORITY_DEFAULT));
             endService();
         } else {
-            currNumSubredditsInQueue = subredditsQueue.size();
             executeTask(subredditsQueue);
         }
     }
