@@ -30,6 +30,7 @@ public class SubredditService extends Service {
     private final static int NOTIF_ID = 12149;
     private final static String CHANNEL_ID = "OfflineReader Notifications";
     private final static String TAG = "Subreddit_Service";
+    private final static String EXTRA_STOP_SERVICE = "stop_service";
     public final static String EXTRA_SUBREDDIT = "subreddit";
 
     private SubredditsDataSource mRepository;
@@ -52,7 +53,8 @@ public class SubredditService extends Service {
         mNotificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                .addAction(getStopAction());
 
         mRepository = ((App) getApplication()).getSubredditsRepository();
         mKeywords = new KeywordsPreference(this);
@@ -69,13 +71,20 @@ public class SubredditService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        List<String> subsToDownload = intent.getStringArrayListExtra(EXTRA_SUBREDDIT);
-        subredditsQueue.addAll(subsToDownload);
-        if (!isDownloading) {
-            isDownloading = true;
-            startForeground(NOTIF_ID, getNotification(getMainActivityIntent(), "", 0, 0,
-                    true, NotificationCompat.PRIORITY_DEFAULT));
-            executeTask(subredditsQueue);
+        if (intent.hasExtra(EXTRA_STOP_SERVICE)) {
+            mNotificationBuilder.mActions.clear();
+            mNotificationManager.notify(NOTIF_ID, getNotification(getMainActivityIntent(), "Download stopped by user", 0, 0,
+                    false, NotificationCompat.PRIORITY_DEFAULT));
+            endService();
+        } else {
+            List<String> subsToDownload = intent.getStringArrayListExtra(EXTRA_SUBREDDIT);
+            subredditsQueue.addAll(subsToDownload);
+            if (!isDownloading) {
+                isDownloading = true;
+                startForeground(NOTIF_ID, getNotification(getMainActivityIntent(), "", 0, 0,
+                        true, NotificationCompat.PRIORITY_DEFAULT));
+                executeTask(subredditsQueue);
+            }
         }
 
         return START_REDELIVER_INTENT;
@@ -163,12 +172,12 @@ public class SubredditService extends Service {
      */
     private Notification getNotification(PendingIntent intent, String text, int maxProgress,
                                          int progress, boolean indeterminate, int priority) {
-        return mNotificationBuilder
-                .setContentIntent(intent)
+        mNotificationBuilder.setContentIntent(intent)
                 .setContentText(text)
                 .setProgress(maxProgress, progress, indeterminate)
-                .setPriority(priority)
-                .build();
+                .setPriority(priority);
+
+        return mNotificationBuilder.build();
     }
 
     /**
@@ -196,6 +205,29 @@ public class SubredditService extends Service {
         }
     }
 
+    private void endService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            stopForeground(Service.STOP_FOREGROUND_DETACH);
+        else
+            stopForeground(false);
+        stopSelf();
+    }
+
+    /**
+     * Returns the notification action that allows a user to
+     * stop the app from downloading threads
+     *
+     * @return
+     */
+    private NotificationCompat.Action getStopAction() {
+        Intent stopServiceIntent = new Intent(this, SubredditService.class);
+        stopServiceIntent.putExtra(EXTRA_STOP_SERVICE, "Stop");
+        PendingIntent stopServicePendingIntent = PendingIntent.getService(this, 0,
+                stopServiceIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        return new NotificationCompat.Action(R.drawable.ic_clear_black_18dp, "Stop", stopServicePendingIntent);
+    }
+
     /**
      * Checks to see if a string contains any word from a specified list of keywords.
      *
@@ -214,13 +246,5 @@ public class SubredditService extends Service {
         }
 
         return false;
-    }
-
-    private void endService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-            stopForeground(Service.STOP_FOREGROUND_DETACH);
-        else
-            stopForeground(false);
-        stopSelf();
     }
 }
